@@ -1,0 +1,218 @@
+[
+  {
+    "id": "seed_01",
+    "title": "AI Agent前端开发工程师",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": "1年以上",
+    "education": "本科及以上",
+    "raw": "岗位职责描述\n1.参与 NAS业务AI Agent产品的设计与研发，负责Agent应用中的前端交互、Node.js服务层、工具调用链路及任务执行流程开发。\n2.参与Agent 系统核心模块建设，包括任务规划、执行编排、Tool/Function Calling、上下文注入、结果反馈与异常处理等能力。\n3.负责或参与Skil/To0l/MCP等工具集成机制的落地，支持业务工具、内部系统、第三方服务与Agent能力的标准化接入。\n4.参与上下文管理能力建设，包括会话上下文、短期记忆、长期记忆、检索增强、状态持久化与前后端状态一致性处理。\n5.基于Node.js/TypeScript构建Agent应用服务，支持工具调用、任务流转、接口编排、结果解析、事件推送等功能。\n6.负责Agent产品前端体验开发，包括任务输入、执行过程展示、工具调用状态、结果反馈、异常提示、多轮对话等交互能力。\n7.参与Agent执行可靠性建设，包括超时控制、重试策略、失败恢复、降级处理、幂等保障与执行日志追踪。\n8.配合产品、算法、后端及业务团队，将业务目标拆解为可执行的Agent产品方案，并推动功能上线与持续迭代。\n9.参与Agent质量体系建设，包括行为回归测试、效果评估、线上问题定位、发布验证、灰度发布与问题复盘。\n10.参与Agent安全与权限治理，包括工具调用权限控制、敏感数据处理、审计日志、沙箱隔离及最小权限原则落地。\n任职资格\n1.本科及以上学历，计算机、软件工程、人工智能等相关专业优先。\n2.具备1年以上AIAgent、LLM应用、智能助手、RAG应用或自动化工作流产品开发经验，有实际产品上线经验优先。\n3.熟练掌握 Node.js/TypeScript/JavaScript，具备良好的前端工程化和服务端开发能力;熟悉 React/Vue/ Next.js等前端框架者优先。\n4.理解AIAgent的基础机制，包括任务拆解、工具调用、Function Calling、上下文注入、记忆管理、检索增强、执行反馈等。\n5.有Agent产品中的工具调用、插件系统、MCP、Skil、工作流编排、自动化助手等相关开发经验优先。\n6.理解上下文管理的基本策略，包括窗口管理、会话历史裁剪、短期记忆、长期记忆、向量检索、重排、缓存与状态一致性。\n7.熟悉前后端协作模式，能够设计并实现Agent执行过程中的状态展示、流式响应、任务进度、异常提示与结果反馈体验。\n8.具备良好的工程实践能力，熟悉接口设计、模块拆分、日志埋点、异常处理、单元测试、集成测试及发布流程。\n10.具备良好的沟通协作能力，能够与产品、算法、后端、测试及业务团队协同推进Agent能力在实际业务场景中的落地。\n加分项\n1.企业流程自动化助手、数据分析助手、客服助手、内容生产助手、娱乐业务助手等Agent产品经验。\n2.参与设计过过高可用、可拓展的Al agent，熟悉多智能体协作multi agent，自我演进 selfevolving等范式。\n3.有LangChain、Llamalndex、Dify、Coze、AutoGen、CrewAI等框架或平台实践经验。\n4.有多Agent协作、复杂工作流编排、插件生态、工具平台建设经验。\n5.有开源项目贡献、技术文章沉淀、内部工具平台建设或跨团队技术推动经验。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": ["React", "Vue", "Next.js", "Node.js", "TypeScript", "JavaScript"],
+        "AI工程化": ["AI Agent", "LLM应用", "RAG", "Function Calling", "MCP", "Tool Calling", "上下文管理", "检索增强", "多智能体"],
+        "工程化/基建": ["接口设计", "模块拆分", "日志埋点", "单元测试", "集成测试", "发布流程", "任务编排"],
+        "工具链": []
+      },
+      "soft_skills": ["沟通协作", "产品协同"],
+      "requirements": [
+        "本科及以上",
+        "1年以上AI Agent/LLM应用/RAG经验",
+        "熟练掌握Node.js/TypeScript/JavaScript",
+        "熟悉React/Vue/Next.js",
+        "理解Agent基础机制",
+        "理解上下文管理",
+        "熟悉前后端协作",
+        "良好的工程实践"
+      ],
+      "bonuses": [
+        "企业流程自动化助手经验",
+        "多智能体协作",
+        "LangChain/LlamaIndex/Dify/Coze/AutoGen/CrewAI",
+        "复杂工作流编排",
+        "开源贡献",
+        "技术文章沉淀"
+      ],
+      "skill_levels": {
+        "React": "常见", "Vue": "常见", "Next.js": "常见", "Node.js": "必备", "TypeScript": "必备",
+        "JavaScript": "必备", "AI Agent": "必备", "LLM应用": "必备", "RAG": "常见",
+        "Function Calling": "常见", "MCP": "常见", "Tool Calling": "常见", "上下文管理": "常见",
+        "检索增强": "常见", "多智能体": "稀缺", "LangChain": "常见", "LlamaIndex": "常见",
+        "Dify": "常见", "Coze": "常见", "AutoGen": "常见", "CrewAI": "常见"
+      }
+    }
+  },
+  {
+    "id": "seed_02",
+    "title": "AI应用开发工程（DevOps智能化）",
+    "company": "字节跳动",
+    "location": "深圳",
+    "salary": null,
+    "experience": "5年以上",
+    "education": "本科及以上",
+    "raw": "团队介绍:我们隶属于产品研发与工程架构部，是字节跳动在智能硬件领域的软件技术攻坚力量，聚焦AI与智能硬件的深度融合。\n1、负责移动OS AIDevOps全链路智能化升级，推动研发模式从传统工具辅助向AI原生能力、Agent驱动的人机协同研发范式演进。\n2、负责AI在代码生成、智能调试、单测生成、Code Review、智能CI、缺陷修复及OnCall等场景落地。\n3、负责智能研发平台及Agent基础设施建设，包括知识底座、Skil、MCP、CLI、Workflow、Multi-Agent、Agent Runtime、Sandbox、评测与反馈闭环等能力。\n4、负责前沿技术探索与范式推广，持续跟进AI Agent/LLM的最新进展，如:代码大模型、Coding Agent、Harness Engineering、Agent Loop。\n职位要求\n1、本科及以上学历，具备5年以上DevOps、SCM、研发效能或研发平台经验。\n2、具备智能研发平台、AI效能方案或CodingAgent的实质性生产落地经验。\n3、精通C/C++、Java、Go、Python中至少一门语言，具备AI效能工程化方案的架构设计和开发经验。\n4、深度使用过 Claude Code、Codex、Gemini CLI等 Coding Agent,熟悉型 API、上下文工程、Tool Calling、MCP、Agent Skil、Workflow、评测、权限及可观测性等关键技术。\n5、具备较强的AI工程化与平台化思维，及组织推动能力，有千人规模的研发协作AI提效落地经验者优先。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": [],
+        "AI工程化": ["AI Agent", "LLM", "Coding Agent", "Agent Loop", "MCP", "Tool Calling", "Multi-Agent", "Agent Runtime", "上下文工程", "评测"],
+        "工程化/基建": ["CI/CD", "代码评审", "构建编译", "测试准入", "发布运维", "研发效能", "知识底座", "Sandbox", "可观测性"],
+        "工具链": ["Claude Code", "Codex", "Gemini CLI", "C++", "Java", "Go", "Python"]
+      },
+      "soft_skills": ["组织推动", "AI布道"],
+      "requirements": [
+        "本科及以上",
+        "5年以上DevOps/SCM/研发效能经验",
+        "AI效能工程化落地经验",
+        "精通C++/Java/Go/Python至少一门",
+        "深度使用Coding Agent",
+        "组织推动能力"
+      ],
+      "bonuses": ["千人规模研发协作AI提效", "Vibe Coding/Spec Coding推广"],
+      "skill_levels": {
+        "AI Agent": "必备", "LLM": "必备", "Coding Agent": "必备", "MCP": "常见", "Tool Calling": "常见",
+        "Multi-Agent": "稀缺", "Agent Runtime": "稀缺", "Claude Code": "常见", "Codex": "常见",
+        "Gemini CLI": "常见", "Go": "常见", "Java": "常见", "C++": "常见", "Python": "常见",
+        "CI/CD": "必备", "可观测性": "常见"
+      }
+    }
+  },
+  {
+    "id": "seed_03",
+    "title": "AI应用开发工程师",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": "至少2年",
+    "education": "本科及以上",
+    "raw": "工作职责\n智能代理应用开发:负责基于大语言模型(LLM)的智能Agent产品设计与开发，包括任务规划、上下文管理、多模态交互插件调用等核心模块。\n系统架构设计与实现:参与Agent平台的整体架构设计，负责前后端模块的集成与性能优化。\n模型与API集成:深入理解并调用主流AI模型(如OpenAI、Anthropic,Claude,Gemini等)的API。\n用户体验优化:与产品、设计团队协作，持续优化UI/UX交互体验。\n数据与日志分析:负责代理运行数据的收集、分析与调优。\n跨平台开发与维护:支持Web、移动端(iOS/Android)等多平台的代理应用落地与维护。\n创新与研究:跟踪AI Agent、RAG、自动化Agent框架的最新进展。\n任职资格\n学历背景:计算机科学、软件工程、人工智能或相关专业本科及以上。\n技术能力:熟悉至少一种主流编程语言(Python、TypeScript、Go等);有LLM应用开发经验;掌握LangChain、AutoGen、Llamalndex等Agent框架者优先;熟悉Web前端(React/Vue)或移动端(Flutter/React Native)开发。\n经验要求:至少2年以上软件开发经验，具备AI产品或Agent应用经验者优先。\n加分项:有独立开发或上线AI Agent应用经验;熟悉Prompt Engineering与系统提示设计;有云端部署经验;参与过AI Hackathon、Agent框架开源项目者优先。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": ["React", "Vue", "TypeScript", "Go", "Python", "Flutter", "React Native"],
+        "AI工程化": ["LLM", "AI Agent", "RAG", "OpenAI API", "Anthropic API", "Claude API", "Gemini API", "Prompt Engineering", "知识检索", "多模态交互", "工具调用", "Agent框架"],
+        "工程化/基建": ["系统设计", "Web前端", "移动端", "API集成", "云端部署"],
+        "工具链": ["LangChain", "AutoGen", "LlamaIndex", "AWS", "GCP", "Azure"]
+      },
+      "soft_skills": ["团队协作", "沟通能力", "学习能力", "问题解决"],
+      "requirements": [
+        "本科及以上",
+        "熟悉Python/TypeScript/Go至少一种",
+        "LLM应用开发经验",
+        "熟悉OpenAI API",
+        "掌握LangChain/AutoGen/LlamaIndex优先",
+        "熟悉React/Vue",
+        "系统设计能力"
+      ],
+      "bonuses": ["独立上线AI Agent", "Prompt Engineering", "云端部署", "AI Hackathon", "Agent框架开源"],
+      "skill_levels": {
+        "React": "常见", "Vue": "常见", "TypeScript": "常见", "Go": "常见", "Python": "常见",
+        "LLM": "必备", "AI Agent": "必备", "RAG": "常见", "OpenAI API": "必备", "Anthropic API": "常见",
+        "Claude API": "常见", "Gemini API": "常见", "Prompt Engineering": "稀缺", "LangChain": "常见",
+        "AutoGen": "常见", "LlamaIndex": "常见", "AWS": "常见", "GCP": "常见", "Azure": "常见"
+      }
+    }
+  },
+  {
+    "id": "seed_04",
+    "title": "AI应用开发工程师（AI效能组）",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": null,
+    "education": null,
+    "raw": "我们是智慧出行事业部研发部的AI效能组，不做面向用户的产品，专门帮公司所有研发团队用AI做得更快更好。\n你会做什么\n深入理解业务场景，将真实问题转化为可执行的AI解决方案;设计和编写SKILL规范、Prompt模板，沉淀为团队可复用的技能资产;参与Agent工作流设计，覆盖需求挖掘-架构设计-代码开发-自动化测试全链路;在真实项目中验证方案效果，快速迭代;协同完成方案工程化落地。\n任职要求\n必要:扎实的编程能力(Python优先)，能独立写出可跑通的代码;必要:有大模型实际使用经验，用过Claude/GPT/国产大模型做过真实项目;必要:理解Prompt Engineering基本原则，写过有结构的、可复用的Prompt;必要:能快速理解业务逻辑。\n加分:有SKILL/LangChain/AutoGen等Agent开发框架使用经验;加分:有出行、IoT、车载场景的AI落地经验。\n判断标准:给你一个真实业务问题，你能在3天内独立输出Prompt+SKILL规范+代码修复方案。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": [],
+        "AI工程化": ["Prompt Engineering", "SKILL", "LangChain", "AutoGen", "Agent开发框架", "多Agent架构", "知识库", "RAG"],
+        "工程化/基建": ["AI方案设计", "工程化落地", "需求挖掘", "架构设计", "自动化测试"],
+        "工具链": ["Python"]
+      },
+      "soft_skills": ["业务理解", "快速学习"],
+      "requirements": ["扎实编程能力(Python优先)", "大模型实际使用经验", "理解Prompt Engineering", "能快速理解业务逻辑"],
+      "bonuses": ["SKILL/LangChain/AutoGen经验", "出行/IoT/车载AI落地"],
+      "skill_levels": {
+        "Python": "必备", "Prompt Engineering": "必备", "SKILL": "常见", "LangChain": "常见",
+        "AutoGen": "常见", "多Agent架构": "稀缺", "RAG": "常见"
+      }
+    }
+  },
+  {
+    "id": "seed_05",
+    "title": "ai开发工程师",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": "5年以上",
+    "education": "大专及以上",
+    "raw": "岗位职责:1、负责AI工具站的前后端架构设计、核心模块开发与优化，构建高性能、高可用的用户界面。2、与产品经理、UI/UX设计师、后端紧密协作，将复杂的设计转化为直观、流畅的用户体验。3、深入理解AI产品特性，负责AI内容生成、编辑、管理等核心功能的前端实现。4、负责前端工程化建设，推动组件库、工具链和规范的持续优化。5、持续关注前端性能优化、可访问性、跨浏览器兼容性。6、参与前端技术选型、技术评审。\n任职要求:1、大专及以上学历，计算机相关专业，5年以上前端开发经验。2、精通JavaScript(ES6+)、TypeScript，深入理解前端工程化。3、精通Vue(Nuxt.js)或React(Next.js)及其生态。4、熟悉主流UI组件库。5、对AI产品有浓厚兴趣，理解AI API交互模式。6、具备组件化、模块化开发思维。7、熟练使用Git。8、具备较强的学习能力、问题解决能力。9、加分项:有富文本编辑器集成经验;有数据可视化经验;对PromptEngineering有基本了解。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": ["JavaScript", "TypeScript", "Vue", "Nuxt.js", "React", "Next.js", "ES6+"],
+        "AI工程化": ["AI API交互", "AI产品前端", "Prompt Engineering(了解)"],
+        "工程化/基建": ["前端工程化", "组件库", "工具链", "性能优化", "可访问性", "跨浏览器兼容", "技术选型", "技术评审"],
+        "工具链": ["Git", "富文本编辑器(Quill/Draftjs/TipTap)", "数据可视化"]
+      },
+      "soft_skills": ["审美/UIUX敏感度", "代码规范", "文档", "团队协作", "学习能力"],
+      "requirements": ["大专及以上", "5年以上前端", "精通JS/ES6+/TS", "精通Vue(Nuxt)或React(Next)", "熟悉UI组件库", "理解AI API交互", "组件化思维"],
+      "bonuses": ["富文本编辑器集成", "数据可视化", "Prompt Engineering基础"],
+      "skill_levels": {
+        "JavaScript": "必备", "TypeScript": "必备", "Vue": "必备", "React": "必备", "Nuxt.js": "常见",
+        "Next.js": "常见", "ES6+": "必备", "AI API交互": "常见", "Prompt Engineering": "稀缺",
+        "Git": "必备", "数据可视化": "常见"
+      }
+    }
+  },
+  {
+    "id": "seed_06",
+    "title": "前端开发（AI Agent）",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": "3年以上",
+    "education": null,
+    "raw": "岗位职责:1、负责AI Agent相关产品的前端架构设计与核心模块开发;2、基于SSE/WebSocket实现大模型流式对话、逐字渲染、会话管理、多轮上下文维护等核心交互;3、对接大模型API，实现工具调用(Function Calling)、Agent 工作流编排、知识库问答等能力的前端落地;4、设计并维护可复用的对话组件库(消息气泡、Markdown渲染、思考过程展示、工具调用结果展示等);5、优化长对话渲染性能(虚拟列表、分块渲染、内存优化);6、参与产品需求评审与技术方案设计。\n岗位要求:1、3年以上前端开发经验，熟练使用React+TypeScript，了解Node.js，具备全栈协作能力，工程化能力扎实;2、有至少1个完整的AI原生产品前端开发经验(含SSE流式输出);3、熟练掌握SSE/WebSocket流式数据处理;4、具备良好的工程化能力:能从0搭建项目架构，设计路由、状态管理、API层、权限体系;5、有Cursor、Claude Code等AI编程工具的使用;6、有大厂外包/驻场经验者优先。\n加分项:1、有3D数字人、Three.js、WebGL相关开发经验;2、有工作流编排(React Flow、Vue Flow、AntV X6等)开发经验;3、有RAG/知识库问答系统前端开发经验;4、有语音交互(TTS/ASR)前端集成经验;5、有交互动效集成经验(Lottie、Rive、CSS/JS动效)。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": ["React", "TypeScript", "Node.js"],
+        "AI工程化": ["大模型流式对话", "SSE", "WebSocket", "Function Calling", "Agent工作流", "知识库问答", "Markdown渲染", "思考过程展示"],
+        "工程化/基建": ["前端架构设计", "组件库", "状态管理", "路由", "API层", "权限体系", "长对话渲染优化", "虚拟列表"],
+        "工具链": ["Cursor", "Claude Code", "React Flow", "Vue Flow", "AntV X6", "Three.js", "WebGL", "Lottie", "Rive", "TTS/ASR"]
+      },
+      "soft_skills": ["用户体验", "需求评审", "技术方案设计"],
+      "requirements": ["3年以上前端", "React+TypeScript", "了解Node.js", "全栈协作", "工程化扎实", "至少一个AI原生产品前端经验(SSE流式)", "SSE/WebSocket流式处理", "Cursor/Claude Code使用"],
+      "bonuses": ["3D数字人/Three.js/WebGL", "工作流编排", "RAG前端", "语音交互TTS/ASR", "交互动效Lottie/Rive"],
+      "skill_levels": {
+        "React": "必备", "TypeScript": "必备", "Node.js": "常见", "SSE": "必备", "WebSocket": "必备",
+        "Function Calling": "常见", "Agent工作流": "常见", "Markdown渲染": "常见", "Cursor": "常见",
+        "Claude Code": "常见", "Three.js": "稀缺", "WebGL": "稀缺", "React Flow": "稀缺", "RAG": "常见",
+        "TTS/ASR": "稀缺"
+      }
+    }
+  },
+  {
+    "id": "seed_07",
+    "title": "前端工程师（AI方向）",
+    "company": null,
+    "location": "深圳",
+    "salary": null,
+    "experience": "2年以上",
+    "education": null,
+    "raw": "岗位重点:负责公司海外官网、营销技术工具、数据追踪、CRM、AI工作流和账号权限体系建设，支撑品牌营销和海外销售从0-1落地。\n岗位职责\n1、负责官网、独立站、域名、DNS、SSL、CDN、表单、备份和基础安全维护。\n2、配置和维护GA4, Google Search Console、Bing Webmaster、 GTM, Meta Pixel, LinkedIn Insight Tag等工具。\n3、负责SEO技术基础，包括sitemap、robots.txt、结构化数据、页面速度和抓取问题排查。\n4、搭建CRM和销售线索数据看板，规范线索来源、阶段、跟进和转化数据。\n5、搭建AI知识库、Prompt模板、内容/销售资料库和自动化工作流，提升团队效率。\n任职要求\n1、2年以上网站运营、IT运营、MarTech、数据运营或自动化工具经验。\n2、熟悉官网/独立站基础技术、数据埋点、搜索收录和账号权限管理。\n3、理解SEO技术基础，能与内容、设计、销售和外包团队协同。熟练使用AI工具、低代码工具或自动化工具，有知识库搭建经验优先。",
+    "extracted": {
+      "hard_skills": {
+        "前端框架/语言": [],
+        "AI工程化": ["AI知识库", "Prompt模板", "自动化工作流", "AI工具"],
+        "工程化/基建": ["官网/独立站基础", "数据埋点", "SEO", "GA4", "GTM", "CRM", "销售线索看板", "账号权限", "CDN/SSL/DNS"],
+        "工具链": ["Shopify", "WooCommerce", "WordPress", "低代码工具", "Meta Pixel", "LinkedIn Insight Tag", "Bing Webmaster"]
+      },
+      "soft_skills": ["协同", "内容/设计/销售协作"],
+      "requirements": ["2年以上网站/IT/MarTech/数据运营", "熟悉独立站基础", "数据埋点", "SEO基础", "AI工具/低代码/自动化", "知识库搭建优先"],
+      "bonuses": ["跨境独立站", "CRM", "Shopify/WooCommerce/WordPress"],
+      "skill_levels": {
+        "SEO": "常见", "GA4": "常见", "GTM": "常见", "CRM": "常见", "AI知识库": "常见",
+        "自动化工作流": "常见", "Shopify": "稀缺", "WordPress": "稀缺"
+      }
+    }
+  }
+]

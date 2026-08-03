@@ -1,0 +1,64 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.local
+
+# data: 含个人 JD 原文与 SQLite 库（计划 §16 / §25，勿提交到远端）
+data/*.db
+data/backups/
+
+# 本机私有：Boss 登录态与持久化浏览器配置（含 cookie，勿提交）
+data/boss_cookies.json
+data/boss_profile/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# LLM API key（策略 A）：含密钥，严禁提交
+.env
+backend/.env
+*.env.local
+
+data/boss_fonts/
+data/salary_sample.json
+data/crawl.lock
+data/.startup-migration.lock
+data/logs/
+
+# TypeScript 增量缓存
+*.tsbuildinfo
+
+# 不提交 lockfile：macOS 生成的 lockfile 在 Linux（CI/服务器）会触发 npm 跨平台
+# optional 依赖 bug（rollup 的 linux 原生二进制装不上 → vite build 崩）。统一用 npm install 按平台解析。
+package-lock.json
+backend/package-lock.json
+frontend/package-lock.json
+
+# QA 生成物（截图/视觉基线/结果，非源码，勿入库）
+tests/audit-shots/
+tests/visual-baseline/
+tests/audit-deep.json
+tests/audit-results.json
+
+# 根目录草稿/预览（非交付物）
+preview-*.html
+probe2.mjs
+
+# vite 临时配置快照（含本机绝对路径，误提交；不入库）
+frontend/*.timestamp-*.mjs
+
+# 本机 launchd 定时任务 plist（含本机绝对路径，勿入库）
+scripts/com.boss.crawler.plist
+
+# 私有文档 / 服务器运维脚本（仅本地，不公开；含个人工作备忘与部署脚本）
+docs/
+deploy/
+

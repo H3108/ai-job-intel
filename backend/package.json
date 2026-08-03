@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "crawl": "node src/crawler.js",
+    "crawl:manual": "node src/crawler.js --manual",
+    "crawl:cdp": "node src/crawler.js --cdp",
+    "crawl:cdp:manual": "node src/crawler.js --cdp --manual",
+    "crawl:launch": "node src/crawler.js --launch",
+    "crawl:launch:manual": "node src/crawler.js --launch --manual",
+    "analyze": "node src/analyze.js",
+    "analyze:merge": "node src/analyze.js --merge",
+    "analyze:ai": "node src/analyze.js --analyze-all",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.22.2",
+    "fontkit": "^2.0.4"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}

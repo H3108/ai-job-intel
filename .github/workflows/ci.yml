@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 注：仓库不提交 package-lock.json（避免 macOS 生成的 lockfile 在 Linux CI / 服务器上
+# 触发 npm 跨平台 optional 依赖 bug —— rollup 的 linux 原生二进制装不上导致 vite build 失败）。
+# 因此用 `npm install`（按当前平台解析），不用 `npm ci`。
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies (fresh, platform-resolved)
+        run: npm install
+      - name: Backend tests
+        run: npm test --prefix backend
+      - name: Frontend build
+        run: npm run build --prefix frontend
