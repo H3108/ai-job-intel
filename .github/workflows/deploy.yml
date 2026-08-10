@@ -1,0 +1,48 @@
+name: Deploy
+
+# 自动部署：push 到 main 时，SSH 到服务器执行 git pull + 前端构建 + 重启后端。
+# 也可在 GitHub Actions 页面手动「Run workflow」触发（workflow_dispatch）。
+#
+# ⚠️ 前置（一次性，由仓库管理员在 GitHub 配置）：
+#   Settings → Secrets and variables → Actions → New repository secret
+#     SERVER_HOST    服务器公网 IP 或域名（需 22 端口 SSH 可达）
+#     SERVER_USER    SSH 登录用户名（建议 root 直连，避免 sudo 坑）
+#     SERVER_SSH_KEY 私钥全文（~/.ssh/id_rsa 内容；对应公钥须已在服务器 ~/.ssh/authorized_keys）
+#
+# 🔒 安全护栏：未配置 SERVER_HOST 时本 job 自动跳过，不会因缺凭证报错。
+# 📌 仅部署「代码 + 前端」；「数据」因爬虫须留本机（住宅 IP 防封），仍由你本机 ./deploy/push.sh 推送。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-jobintel
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SERVER_HOST != '' }}
+    steps:
+      - name: SSH deploy (git pull + build frontend + restart backend)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /var/www/jobintel
+            echo ">>> git pull origin main"
+            git pull origin main
+            echo ">>> install + build frontend"
+            cd frontend
+            npm install
+            npm run build
+            echo ">>> restart backend service"
+            systemctl restart jobintel-backend
+            echo ">>> deploy done ✅"
