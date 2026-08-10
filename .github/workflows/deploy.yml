@@ -9,7 +9,8 @@ name: Deploy
 #     SERVER_USER    SSH 登录用户名（建议 root 直连，避免 sudo 坑）
 #     SERVER_SSH_KEY 私钥全文（~/.ssh/id_rsa 内容；对应公钥须已在服务器 ~/.ssh/authorized_keys）
 #
-# 🔒 安全护栏：未配置 SERVER_HOST 时本 job 自动跳过，不会因缺凭证报错。
+# ⚠️ 前置：仓库必须已配置 SERVER_HOST / SERVER_USER / SERVER_SSH_KEY 三个 Secrets，
+#    否则本 job 会因无法连接服务器而失败（不会静默跳过）。
 # 📌 仅部署「代码 + 前端」；「数据」因爬虫须留本机（住宅 IP 防封），仍由你本机 ./deploy/push.sh 推送。
 
 on:
@@ -25,7 +26,6 @@ jobs:
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
-    if: ${{ secrets.SERVER_HOST != '' }}
     steps:
       - name: SSH deploy (git pull + build frontend + restart backend)
         uses: appleboy/ssh-action@v1.2.0
