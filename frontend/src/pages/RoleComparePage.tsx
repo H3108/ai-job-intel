@@ -5,8 +5,10 @@ import { categoryLabel } from "../lib/category"
 import { buildRoleGroups } from "../lib/roleGroups"
 import { friendlyError } from "../lib/errorMessage"
 import { cn } from "../lib/cn"
+import { getResolvedTheme } from "../lib/theme"
 import { toPng } from "html-to-image"
 import { Section, Meter, Alert, Button, Segmented, Select } from "../design-system"
+// 注：Alert 本文件已用于「东莞样本离群」「接口异常」，此处仅复用。
 import { CATEGORY_ORDER, TIER_COLORS, Chip, TierLine } from "../components/analysis"
 
 // 角色底色走 CSS 变量（index.css 的 --role-bg-0..4），双主题各一套，保证 AA 对比。
@@ -89,7 +91,7 @@ function subFor(g: CompareRole, mode: 'role' | 'city') {
 // 数据来源：/api/compare（后端对每个角色/城市复用 insights()）。
 // 维度：跨角色（多角色同城）/ 跨城市（单角色多城）。两模式复用同一套分组卡片。
 export default function RoleComparePage() {
-  const scopesQ = useQuery<Scopes>({ queryKey: ['scopes-compare'], queryFn: fetchScopes })
+  const scopesQ = useQuery<Scopes>({ queryKey: ['scopes'], queryFn: fetchScopes })
   const roleStats = scopesQ.data?.roleStats || []
   const availableRoles = useMemo(() => roleStats.filter((r) => r.analyzed > 0), [roleStats])
   const allRoles = scopesQ.data?.roles || []
@@ -229,7 +231,9 @@ export default function RoleComparePage() {
     const node = exportRef.current
     if (!node) return
     try {
-      const dataUrl = await toPng(node, { backgroundColor: '#09090B', pixelRatio: 2, cacheBust: true })
+      // 主题感知底色：读「实际生效主题」（含手动切换覆盖），避免亮色模式下黑底黑字不可读。
+      const exportBg = getResolvedTheme() === 'light' ? '#FFFFFF' : '#09090B'
+      const dataUrl = await toPng(node, { backgroundColor: exportBg, pixelRatio: 2, cacheBust: true })
       const a = document.createElement('a')
       a.href = dataUrl
       a.download = `compare-${dimension}-${Date.now()}.png`
@@ -251,7 +255,7 @@ export default function RoleComparePage() {
             </p>
           </div>
           <div className="flex items-center gap-2 pt-1">
-            <Button size="sm" variant="secondary" onClick={handleExportPng}>导出 PNG</Button>
+            <Button size="sm" variant="secondary" onClick={handleExportPng} data-no-print>导出 PNG</Button>
           </div>
         </div>
         <Segmented

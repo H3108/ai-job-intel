@@ -53,6 +53,10 @@ export const EXTRACTION_SCHEMA = {
   skill_levels: {} // skill -> '必备' | '常见' | '稀缺'
 }
 
+// 重要性权重（单一可信源）：前端展示口径从此处取数（/api/analytics 一并返回），改这里即全局生效。
+// 与前端原硬编码 LEVEL_WEIGHT 对齐；加分项(0.5) 为 LLM 偶发别名，前端安全忽略。
+export const LEVEL_WEIGHT = { 必备: 3, 常见: 1, 稀缺: 2, 加分: 0.5, 加分项: 0.5 }
+
 function openDb() {
   return new DatabaseSync(DB_PATH)
 }
@@ -349,7 +353,7 @@ export function aggregate(db, targetRole = 'AI Agent 前端', scope = null) {
   // 优先级评分：出现频次 × 重要性权重（必备=3 / 常见=1 / 稀缺=2，取最高权重）
   const priority = skillRank
     .map((s) => {
-      const lvlWeights = { 必备: 3, 常见: 1, 稀缺: 2, 加分: 0.5, 加分项: 0.5 }
+      const lvlWeights = LEVEL_WEIGHT
       let w = 1
       for (const [lvl, c] of Object.entries(s.levels)) {
         const ww = lvlWeights[lvl] || 1
@@ -472,7 +476,8 @@ export function salaryStats(db, targetRole = 'AI Agent 前端', scope = null) {
 // ── 后端分析增强（Phase 3 数据层，不依赖前端页面） ─────────────────────────────
 // 跨分类去重：每个技能归到「主分类」（出现 job 数最多者；并列按 CATEGORY_PRECEDENCE）。
 // 否则 AI 设计工具同时挂 AI工程化+工具链，会在两类里重复计数，虚高分类优先级。
-const CATEGORY_PRECEDENCE = ['前端框架/语言', '工程化/基建', 'AI工程化', '工具链', 'soft']
+// 导出为单一可信源，前端经 /api/analytics 的 categoryPrecedence 消费，不再硬编码。
+export const CATEGORY_PRECEDENCE = ['前端框架/语言', '工程化/基建', 'AI工程化', '工具链', 'soft']
 export function buildPrimaryCategoryMap(db) {
   const rows = db.prepare(
     "SELECT skill, category, COUNT(DISTINCT job_id) AS jobs FROM job_skills WHERE category IS NOT NULL GROUP BY skill, category"

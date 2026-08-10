@@ -62,3 +62,6 @@ scripts/com.boss.crawler.plist
 docs/
 deploy/
 
+# 本机私有：WorkBuddy 本地记忆/状态/配置（含可能密钥，严禁提交）
+.workbuddy/
+

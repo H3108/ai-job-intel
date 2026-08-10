@@ -86,8 +86,7 @@
   --info: #38bdf8;    --info-bg: rgba(56, 189, 248, .12);    --info-fg: #7dd3fc;    --info-border: rgba(56, 189, 248, .3);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
+:root[data-theme="light"] {
     --bg: #FFFFFF;
     --bg-2: #F4F4F5;
     --surface: rgba(9, 9, 11, 0.03);
@@ -139,7 +138,6 @@
     --point-rgb: 4 120 87;
 
     color-scheme: light;
-  }
 }
 
 html {
@@ -198,4 +196,37 @@ body {
 }
 
 /* ===== 打印 / PDF 导出（服务 /compare 导出分享）===== */
-/* 强制暗底亮字，避免浏览器打印成白底黑字丢失暗色视觉；隐藏导航与导出控件，只留对比正文。 */
+/* 跟随当前主题（data-theme 驱动 token）：隐藏导航与导出控件，只留对比正文；
+   保留色块颜色，避免浏览器把暗色视觉洗白。改主题即改打印配色。 */
+@media print {
+  /* 隐藏外壳导航 / 页眉 / 跳链 / 导出控件等非内容元素 */
+  aside,
+  header,
+  .sr-only:not(:focus),
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* 强制暗底亮字，保留暗色视觉一致性 */
+  html,
+  body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    background-attachment: scroll !important;
+  }
+
+  /* 确保图表色块 / 角色底色在打印时保留颜色 */
+  body * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  #compare-export {
+    box-shadow: none !important;
+    max-width: none !important;
+  }
+}

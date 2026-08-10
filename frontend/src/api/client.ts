@@ -138,6 +138,9 @@ export interface Analytics {
     premium: { skill: string; count: number }[]
     tools: { skill: string; count: number }[]
   }
+  // 权重/优先级规则（单一可信源，后端 analyze.js 导出，经 /api/analytics 返回；前端不再硬编码，审计 Issue 8）
+  levelWeights: Record<string, number>
+  categoryPrecedence: string[]
 }
 
 export async function fetchAnalytics(scope?: Scope): Promise<Analytics> {
@@ -361,14 +364,34 @@ export async function fetchCrawlStatus(): Promise<CrawlStatus> {
 }
 
 // 手动触发抓取（POST /api/crawl-trigger），后台 detached 运行。
+// 注意：业务层 ok/error 仍由后端在 200 响应体里返回（如「已在运行」），此处仅对 HTTP 失败（5xx/网关错误/网络断）抛错，
+// 让 react-query mutation 的 isError 能正确捕获，避免「失败当成功」。
 export async function triggerCrawl(): Promise<{ ok: boolean; message?: string; error?: string }> {
   const res = await fetch('/api/crawl-trigger', { method: 'POST' })
+  if (!res.ok) {
+    let detail = ''
+    try {
+      detail = (await res.json()).error || ''
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`触发抓取失败：${res.status}${detail ? ' · ' + detail : ''}`)
+  }
   return res.json()
 }
 
 // 停止抓取（POST /api/crawl-stop）：按进程组发送 SIGTERM，释放真机资源。
 export async function stopCrawl(): Promise<{ ok: boolean; killed: boolean; message?: string }> {
   const res = await fetch('/api/crawl-stop', { method: 'POST' })
+  if (!res.ok) {
+    let detail = ''
+    try {
+      detail = (await res.json()).error || ''
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`停止抓取失败：${res.status}${detail ? ' · ' + detail : ''}`)
+  }
   return res.json()
 }
 

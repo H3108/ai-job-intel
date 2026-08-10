@@ -2,7 +2,7 @@
 // 纯展示，不依赖业务数据；「真实数据演示」段会用 /api/compare 实拉，展示 roleTiers 的落地写法。
 import { useQuery } from "@tanstack/react-query"
 import { fetchCompare, type CompareRole } from "../api/client"
-import { Section, Badge, PageHeader } from "../design-system"
+import { Section, Badge, PageHeader, Alert } from "../design-system"
 import { Loading, ErrorBox } from "../components/ui"
 import {
   ACCENT,
@@ -69,6 +69,12 @@ export default function AnalysisShowcasePage() {
         title="分析组件示例"
         desc="细报表 / 角色对比 / 学习路线三页共用的「分层解读 + 行动建议」组件快照。复制代码即可复用，零新依赖。"
       />
+
+      <Alert tone="info" title="本页为组件示例">
+        第 2–4 节使用<strong className="text-text">虚构示例数据</strong>（如 React 79、突破 20K
+        等），仅用于演示组件外观，<strong className="text-text">非真实市场统计</strong>；第 5 节拉取真实接口
+        /api/compare 数据，可作对照。
+      </Alert>
 
       {/* 1. 配色速查 */}
       <Section title="配色常量" desc="统一黑绿主题，可按类别着色。catColor(cat) 自动回退到「其他」。">

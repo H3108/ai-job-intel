@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import type { Job } from "../api/client"
+import { type Job, fetchJob } from "../api/client"
 import { Badge } from "../design-system"
 import type { BadgeTone } from "../design-system"
 import { cn } from "../lib/cn"
@@ -158,11 +158,8 @@ export default function JobCard({ job }: { job: Job }) {
     if (next && job.extracted == null && !loadingDetail) {
       setLoadingDetail(true)
       try {
-        const r = await fetch(`/api/jobs/${encodeURIComponent(job.id)}`)
-        if (r.ok) {
-          const d = await r.json()
-          setExtracted(d.job?.extracted ?? null)
-        }
+        const d = await fetchJob(job.id)
+        setExtracted(d.extracted ?? null)
       } catch {
         /* 静默：详情拉取失败时仅不展示能力要求 */
       } finally {

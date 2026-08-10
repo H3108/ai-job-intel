@@ -40,7 +40,7 @@ function BarRow({
   const pct = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0
   return (
     <div className="flex items-center gap-3">
-      <div className="w-40 shrink-0 truncate text-sm text-text" title={title ?? label}>
+      <div className="w-24 shrink-0 truncate text-sm text-text sm:w-32 lg:w-40" title={title ?? label}>
         {label}
       </div>
       <div className="relative h-6 flex-1 overflow-hidden rounded-md bg-surface-solid">
@@ -59,7 +59,7 @@ function BarRow({
 export default function RoleDetailPage() {
   const [params, setParams] = useSearchParams()
   const qc = useQueryClient()
-  const scopesQ = useQuery<Scopes>({ queryKey: ["scopes-detail"], queryFn: fetchScopes })
+  const scopesQ = useQuery<Scopes>({ queryKey: ["scopes"], queryFn: fetchScopes })
   const roles = useMemo(() => scopesQ.data?.roles || [], [scopesQ.data])
   // 角色 → { func, family } 映射（来自 scopes.roleStats），驱动两级选择器。
   const roleInfo = useMemo(() => {

@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react"
 import { lazy, Suspense } from "react"
 import { NavLink, Route, Routes, useLocation } from "react-router-dom"
 import { cn } from "../lib/cn"
+import { ThemeToggle } from "./ThemeToggle"
 import { Loading } from "./ui"
 import ScopeTagline from "./ScopeTagline"
+import ErrorBoundary from "./ErrorBoundary"
 
 // P2：五页改为动态导入 → 自动代码分割（每页独立 chunk，首屏只加载外壳 + 当前路由）。
 const Dashboard = lazy(() => import("../pages/Dashboard"))
@@ -19,6 +21,7 @@ const RoleDetailPage = lazy(() => import("../pages/RoleDetailPage"))
 const JobsPage = lazy(() => import("../pages/JobsPage"))
 const AnalysisShowcasePage = lazy(() => import("../pages/AnalysisShowcasePage"))
 const DesignSystemShowcase = lazy(() => import("../design-system/Showcase"))
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage"))
 
 const NAV_GROUPS = [
   {
@@ -190,6 +193,9 @@ export default function AppShell() {
       >
         <div className="shrink-0 border-b border-border px-3 py-4">
           <BrandBlock />
+          <div className="mt-3 flex justify-start">
+            <ThemeToggle />
+          </div>
         </div>
         <nav aria-label="主导航" className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
           <NavGroups search={location.search} />
@@ -249,6 +255,9 @@ export default function AppShell() {
               </span>
             </button>
             <span className="font-display text-base font-semibold text-text">AI 求职情报</span>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
           </div>
           <ScopeTagline className="text-sm" variant="header" />
         </header>
@@ -256,7 +265,8 @@ export default function AppShell() {
         <main id="main" className="min-w-0 flex-1">
           <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
             <Suspense fallback={<Loading msg="加载页面…" />}>
-              <Routes>
+              <ErrorBoundary>
+                <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/gap" element={<GapPage />} />
                 <Route path="/roadmap" element={<RoadmapPage />} />
@@ -271,8 +281,9 @@ export default function AppShell() {
                 <Route path="/analysis-showcase" element={<AnalysisShowcasePage />} />
                 <Route path="/persona" element={<PersonaPage />} />
                 <Route path="/design-system" element={<DesignSystemShowcase />} />
-                <Route path="*" element={<Dashboard />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              </ErrorBoundary>
             </Suspense>
           </div>
         </main>

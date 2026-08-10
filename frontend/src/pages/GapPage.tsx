@@ -162,10 +162,10 @@ function ProgressOverview({
       </div>
       <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-border">
         {mastered > 0 && (
-          <div className="bg-emerald-500 transition-[width] duration-300" style={{ width: `${pct(mastered)}%` }} />
+          <div className="transition-[width] duration-300" style={{ width: `${pct(mastered)}%`, backgroundColor: 'var(--primary)' }} />
         )}
         {learning > 0 && (
-          <div className="bg-sky-500 transition-[width] duration-300" style={{ width: `${pct(learning)}%` }} />
+          <div className="transition-[width] duration-300" style={{ width: `${pct(learning)}%`, backgroundColor: 'var(--info)' }} />
         )}
       </div>
     </div>

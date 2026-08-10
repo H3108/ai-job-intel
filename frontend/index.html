@@ -7,6 +7,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content="深圳 AI 岗情报：采集 → 提炼能力模型 → 反推学习路线" />
     <title>AI 求职情报系统</title>
+    <!-- 无闪烁主题：在首屏绘制前根据 localStorage 设定 data-theme，避免深色/浅色闪一下 -->
+    <script>
+      (function () {
+        try {
+          var k = 'ai-job-theme'
+          var v = localStorage.getItem(k)
+          var valid = { light: 1, dark: 1, auto: 1 }
+          if (!v || !valid[v]) v = 'auto'
+          var pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          var resolved = v === 'auto' ? pref : v
+          document.documentElement.setAttribute('data-theme', resolved)
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

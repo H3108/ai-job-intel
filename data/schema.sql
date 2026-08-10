@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   location           TEXT,                        -- 默认 深圳
   salary             TEXT,
   salary_raw         TEXT,                        -- §9.x 解密前的加密薪资文本（PUA 码点），便于 Boss 换字体后重解
-  salary_confidence  TEXT,                        -- high / medium / low（解密置信度）
+  salary_confidence  TEXT,                        -- numeric 0–1（解密置信度，crawler.js 实际存浮点）
   experience         TEXT,
   education          TEXT,
   education_level    TEXT,                        -- 方案 B：学历规范层级（本科/大专/硕士…，由 education 派生）

@@ -159,7 +159,7 @@ export default function Dashboard() {
       {/* 分析数据错误（不影响岗位列表与采集健康度） */}
       {analyticsError && (
         <Alert tone="warning" title="分析数据加载失败">
-          {String(analyticsErr)}
+          {friendlyError(analyticsErr)}
         </Alert>
       )}
 

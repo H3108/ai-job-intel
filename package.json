@@ -13,6 +13,7 @@
     "dev:backend": "npm --prefix backend run dev",
     "backup:db": "node scripts/backup-db.mjs",
     "restore:db": "node scripts/restore-db.mjs",
+    "test": "npm test --prefix backend",
     "test:api": "node tests/api-smoke.mjs",
     "test:e2e": "node tests/e2e.mjs"
   },

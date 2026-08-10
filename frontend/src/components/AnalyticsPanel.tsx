@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import type { Analytics } from "../api/client"
 import { Meter, Segmented, Badge, type BadgeTone } from "../design-system"
 import { cn } from "../lib/cn"
+import { weightOf, enrichSkill, type Enriched } from "../lib/skillRank"
 
 // 无卡片化子块：仅小标题 + 内容，靠留白分隔（不套卡）。
 function Block({ title, children }: { title: string; children: ReactNode }) {
@@ -29,27 +30,9 @@ function distToRows(dist: Record<string, number>, limit = 10) {
 // label 用人类化展示。软技能原始键为 'soft'，显示成「软技能」。
 const CATEGORIES = ['前端框架/语言', 'AI工程化', '工程化/基建', '工具链', 'soft']
 const CAT_LABEL: Record<string, string> = { soft: '软技能' }
-const LEVEL_WEIGHT: Record<string, number> = { 必备: 3, 稀缺: 2, 常见: 1, 加分: 0.5 }
-const weightOf = (lvl?: string) => LEVEL_WEIGHT[lvl || ''] ?? 1
-
-type Enriched = { skill: string; count: number; topLevel?: string; score: number; categories: string[]; primaryCat: string | null }
-// 主分类去重：与后端 categoryPriority 口径一致（CATEGORY_PRECEDENCE 兜底），
-// 避免一个跨类技能（如 SSE 同挂 AI工程化+工程化基建）在多个维度榜单重复出现、虚化"维度特有技能"。
-const CAT_PRECEDENCE = ['前端框架/语言', '工程化/基建', 'AI工程化', '工具链', 'soft']
-function enrich(s: Analytics['skillRank'][number]): Enriched {
-  let w = 1
-  let topLevel: string | undefined
-  for (const [lvl] of Object.entries(s.levels || {})) {
-    const ww = LEVEL_WEIGHT[lvl] || 1
-    if (ww > w) {
-      w = ww
-      topLevel = lvl
-    }
-  }
-  const cats = s.categories || []
-  const primaryCat = CAT_PRECEDENCE.find((c) => cats.includes(c)) || null
-  return { skill: s.skill, count: s.count, topLevel, score: s.count * w, categories: cats, primaryCat }
-}
+// ⚠️ 权重/优先级规则已上移为单一可信源：LEVEL_WEIGHT → 后端 analyze.js 导出的 levelWeights，
+// CAT_PRECEDENCE → 后端 categoryPrecedence，均经 /api/analytics 返回，前端（data.*）消费，不再硬编码（Issue 8）。
+// 派生逻辑见 lib/skillRank.ts（weightOf / enrichSkill）。
 
 // 等级 → 徽章色：必备(关键)用强调绿、稀缺用琥珀、常见中性、加分用信息蓝；不引入红，贴合黑绿主题。
 function levelTone(lvl?: string): BadgeTone {
@@ -177,7 +160,7 @@ function SkillRow({
       </div>
       <div className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-accent to-[#6EE7B7] transition-[width] duration-300"
+          className="h-full rounded-full bg-gradient-to-r from-accent to-[var(--accent-hover)] transition-[width] duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -187,7 +170,15 @@ function SkillRow({
   )
 }
 
-function SkillPriorityBlock({ skillRank }: { skillRank: Analytics['skillRank'] }) {
+function SkillPriorityBlock({
+  skillRank,
+  levelWeights,
+  categoryPrecedence,
+}: {
+  skillRank: Analytics['skillRank']
+  levelWeights: Record<string, number>
+  categoryPrecedence: string[]
+}) {
   const [mode, setMode] = useState<'composite' | 'frequency' | 'importance'>('composite')
   const [cat, setCat] = useState('全部')
 
@@ -196,22 +187,22 @@ function SkillPriorityBlock({ skillRank }: { skillRank: Analytics['skillRank'] }
   const effectiveMode = isSoft ? 'frequency' : mode
 
   const sorted = useMemo(() => {
-    const enriched = skillRank.map(enrich)
+    const enriched = skillRank.map((s) => enrichSkill(s, levelWeights, categoryPrecedence))
     const src = cat === '全部' ? enriched : enriched.filter((s) => s.primaryCat === cat)
     const arr = src.slice()
     if (effectiveMode === 'frequency') arr.sort((a, b) => b.count - a.count)
-    else if (effectiveMode === 'importance') arr.sort((a, b) => weightOf(b.topLevel) - weightOf(a.topLevel) || b.count - a.count)
+    else if (effectiveMode === 'importance') arr.sort((a, b) => weightOf(b.topLevel, levelWeights) - weightOf(a.topLevel, levelWeights) || b.count - a.count)
     else arr.sort((a, b) => b.score - a.score)
     return arr.slice(0, 15)
-  }, [skillRank, cat, effectiveMode])
+  }, [skillRank, cat, effectiveMode, levelWeights, categoryPrecedence])
 
   const maxScore = Math.max(1, ...sorted.map((s) => s.score))
   const maxCount = Math.max(1, ...sorted.map((s) => s.count))
   const barValue = (s: Enriched) =>
-    effectiveMode === 'frequency' ? s.count : effectiveMode === 'importance' ? weightOf(s.topLevel) : s.score
+    effectiveMode === 'frequency' ? s.count : effectiveMode === 'importance' ? weightOf(s.topLevel, levelWeights) : s.score
   const barMax = effectiveMode === 'frequency' ? maxCount : effectiveMode === 'importance' ? 3 : maxScore
   const metaOf = (s: Enriched) =>
-    effectiveMode === 'frequency' ? `权重 ×${weightOf(s.topLevel)}` : `频次 ${s.count}`
+    effectiveMode === 'frequency' ? `权重 ×${weightOf(s.topLevel, levelWeights)}` : `频次 ${s.count}`
 
   return (
     <div className="space-y-4">
@@ -279,7 +270,11 @@ export default function AnalyticsPanel({ data }: { data: Analytics }) {
 
   return (
     <div className="space-y-10">
-      <SkillPriorityBlock skillRank={data.skillRank} />
+      <SkillPriorityBlock
+        skillRank={data.skillRank}
+        levelWeights={data.levelWeights}
+        categoryPrecedence={data.categoryPrecedence}
+      />
 
       <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2">
         <Block title="岗位细分方向（按标题聚类）">

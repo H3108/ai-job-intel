@@ -102,7 +102,56 @@ async function main() {
     assert(inputs > 0, '画像页至少有 1 个表单控件')
   })
 
-  // 5) 控制台无未捕获 JS 错误（过滤掉后端未起时的 /api 网络错误）
+  // 5) 主题切换器：三态切换 + localStorage 持久化 + 刷新保持
+  // 控件在桌面侧栏与移动顶栏各一份，getByRole 默认排除隐藏元素，
+  // 故桌面视口下只命中侧栏那份；用 .first() 兜底双份情况。
+  await check('主题切换器：点「浅色」→ html[data-theme=light] 且 localStorage 持久化', async () => {
+    await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 20000 })
+    await page.getByRole('button', { name: '浅色' }).first().click({ timeout: 8000 })
+    await page.waitForFunction(
+      () => document.documentElement.getAttribute('data-theme') === 'light',
+      { timeout: 5000 }
+    )
+    const stored = await page.evaluate(() => localStorage.getItem('ai-job-theme'))
+    assert(stored === 'light', 'localStorage[ai-job-theme] = ' + stored)
+  })
+
+  await check('主题切换器：刷新后保持「浅色」(localStorage 持久化生效)', async () => {
+    await page.reload({ waitUntil: 'networkidle', timeout: 20000 })
+    await page.waitForFunction(
+      () => document.documentElement.getAttribute('data-theme') === 'light',
+      { timeout: 5000 }
+    )
+    const stored = await page.evaluate(() => localStorage.getItem('ai-job-theme'))
+    assert(stored === 'light', '刷新后 localStorage[ai-job-theme] = ' + stored)
+  })
+
+  await check('主题切换器：点「深色」→ html[data-theme=dark] 且 localStorage= dark', async () => {
+    await page.getByRole('button', { name: '深色' }).first().click({ timeout: 8000 })
+    await page.waitForFunction(
+      () => document.documentElement.getAttribute('data-theme') === 'dark',
+      { timeout: 5000 }
+    )
+    const stored = await page.evaluate(() => localStorage.getItem('ai-job-theme'))
+    assert(stored === 'dark', 'localStorage[ai-job-theme] = ' + stored)
+  })
+
+  await check('主题切换器：点「跟随」→ localStorage=auto 且解析为系统偏好', async () => {
+    await page.getByRole('button', { name: '跟随' }).first().click({ timeout: 8000 })
+    const stored = await page.evaluate(() => localStorage.getItem('ai-job-theme'))
+    assert(stored === 'auto', 'localStorage[ai-job-theme] = ' + stored)
+    // 跟随模式：实际主题应等于系统偏好（无头 chromium 默认 light，不硬编码 dark）
+    const sysPref = await page.evaluate(() =>
+      window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+    )
+    await page.waitForFunction(
+      (p) => document.documentElement.getAttribute('data-theme') === p,
+      sysPref,
+      { timeout: 5000 }
+    )
+  })
+
+  // 6) 控制台无未捕获 JS 错误（过滤掉后端未起时的 /api 网络错误）
   await check('关键路径无未捕获 JS 错误', async () => {
     const real = consoleErrors.filter(
       (e) => !/Failed to load resource|fetch.*failed|net::|404|500|SyntaxError/i.test(e)

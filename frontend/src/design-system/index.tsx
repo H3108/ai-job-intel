@@ -370,7 +370,7 @@ const meterColor: Record<MeterTone, string> = {
   danger: 'bg-danger',
   info: 'bg-info',
 }
-const meterGradient = 'bg-gradient-to-r from-accent to-[#6EE7B7]'
+const meterGradient = 'bg-gradient-to-r from-accent to-[var(--accent-hover)]'
 export function Meter({
   value,
   max = 100,

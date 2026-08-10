@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path'
 import { mkdirSync, readFileSync, existsSync, readdirSync, statSync, unlinkSync, rmdirSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { importJobs, ensureSalaryColumns } from './importer.js'
-import { insights, roleDetail, getProfile, saveProfile, scopeFilter, parseSalary } from './analyze.js'
+import { insights, roleDetail, getProfile, saveProfile, scopeFilter, parseSalary, LEVEL_WEIGHT, CATEGORY_PRECEDENCE } from './analyze.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope, ensureTaxonomyColumns } from './migrate.js'
 import { createMigrationGate } from './migration-gate.js'
 import { CITIES, ROLE_TEMPLATES } from './search-templates.js'
@@ -98,6 +98,21 @@ app.use((req, res, next) => {
   }
   next()
 })
+
+// P3 安全：可选 Bearer 鉴权。设置环境变量 API_TOKEN 后，除 /api/health 外所有接口
+// 必须携带 Authorization: Bearer <API_TOKEN>（或 ?token=<API_TOKEN>），否则返回 401。
+// 未设置 API_TOKEN 时接口保持开放（本地工具默认），不影响现有调用与测试。
+const API_TOKEN = process.env.API_TOKEN
+if (API_TOKEN) {
+  app.use((req, res, next) => {
+    if (req.path === '/api/health') return next()
+    const auth = req.headers['authorization'] || ''
+    const fromHeader = String(auth).startsWith('Bearer ') ? String(auth).slice(7) : ''
+    const fromQuery = typeof req.query.token === 'string' ? req.query.token : ''
+    if (fromHeader === API_TOKEN || fromQuery === API_TOKEN) return next()
+    return res.status(401).json({ ok: false, error: 'unauthorized: missing or invalid API_TOKEN' })
+  })
+}
 
 // 采集健康度（看板状态灯）：从 crawl_runs(最新一次) + jobs 派生真实信号。
 // Salary 校验 SOP：除解码率外，额外暴露低置信占比，超阈值置 warn（对齐 Phase4 健康指标）。
@@ -381,7 +396,8 @@ app.get('/api/analytics', (req, res) => {
     const rows = db.prepare(`SELECT id, title, normalized_title, company, salary, status FROM jobs ${sf.where}`).all(...sf.params)
     const agg = insights(db, targetRole, scope)
     const clusters = titleClusters(rows)
-    const payload = { ...agg, titleClusters: clusters }
+    // 权重/优先级规则（单一可信源）随分析接口一并返回，前端不再硬编码（审计 Issue 8）。
+    const payload = { ...agg, titleClusters: clusters, levelWeights: LEVEL_WEIGHT, categoryPrecedence: CATEGORY_PRECEDENCE }
     analyticsCache.set(cacheKey, { ts: Date.now(), payload })
     res.json(payload)
   } catch (e) {
@@ -398,7 +414,7 @@ app.get('/api/analytics', (req, res) => {
         const agg = insights(db, req.query.target || 'AI Agent 前端', scope)
         const clusters = titleClusters(rows)
         console.warn('[api/analytics] 检测到缺列，已自动补齐结构并重试成功')
-        return res.json({ ...agg, titleClusters: clusters })
+        return res.json({ ...agg, titleClusters: clusters, levelWeights: LEVEL_WEIGHT, categoryPrecedence: CATEGORY_PRECEDENCE })
       } catch (e2) {
         console.error('[api/analytics] 自愈重试仍失败:', e2?.stack || e2)
       }
@@ -657,7 +673,13 @@ app.post('/api/crawl-stop', (_req, res) => {
 })
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => {
-  console.log(`[backend] listening on http://localhost:${PORT}`)
+const HOST = process.env.HOST || 'localhost'
+app.listen(PORT, HOST, () => {
+  console.log(`[backend] listening on http://${HOST}:${PORT}`)
   console.log(`[backend] sqlite: ${join(dataDir, 'jobs.db')}`)
+  // P3 安全：监听所有网络接口且未设 API_TOKEN → 公网暴露警告（避免误部署裸奔）。
+  if ((HOST === '0.0.0.0' || HOST === '::') && !process.env.API_TOKEN) {
+    console.warn('\n⚠️  安全提醒：后端正监听所有网络接口(0.0.0.0)，且未设置 API_TOKEN。')
+    console.warn('    任何人可访问你的数据接口。公网/局域网部署前请设置 API_TOKEN 环境变量开启 Bearer 鉴权。\n')
+  }
 })
