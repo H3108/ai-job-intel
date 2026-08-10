@@ -37,8 +37,9 @@ jobs:
           script: |
             set -e
             cd /var/www/jobintel
-            echo ">>> git pull origin main"
-            git pull origin main
+            echo ">>> fetch + reset --hard origin/main (部署目标为只读，强制对齐远端)"
+            git fetch origin
+            git reset --hard origin/main
             echo ">>> install + build frontend"
             cd frontend
             npm install
