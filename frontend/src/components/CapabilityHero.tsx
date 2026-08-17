@@ -71,12 +71,16 @@ function RadialCapability({ categories }: { categories: Analytics["categoryPrior
     }).join(" ")
 
   // 数据闭合多边形路径
-  const dataPath = top
-    .map((cat, i) => {
-      const p = pt(i, cat.weight / maxW)
-      return `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
-    })
-    .join(" ") + " Z"
+  // 防御：top 为空（无数据）时不得生成 `" Z"`（缺少 M moveto 首命令 → 浏览器报
+  // `<path> attribute d: Expected moveto path command`），空数据直接给空 path，跳过渲染。
+  const dataPath = top.length
+    ? top
+        .map((cat, i) => {
+          const p = pt(i, cat.weight / maxW)
+          return `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
+        })
+        .join(" ") + " Z"
+    : ""
 
   return (
     <div className="flex w-full max-w-[360px] flex-col items-center">
@@ -116,14 +120,16 @@ function RadialCapability({ categories }: { categories: Analytics["categoryPrior
         })}
 
         {/* 数据多边形：半透明绿填充 + 实线 stroke */}
-        <path
-          d={dataPath}
-          fill="var(--accent)"
-          fillOpacity={0.18}
-          stroke="var(--accent)"
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-        />
+        {dataPath && (
+          <path
+            d={dataPath}
+            fill="var(--accent)"
+            fillOpacity={0.18}
+            stroke="var(--accent)"
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+          />
+        )}
 
         {/* 数据点 */}
         {top.map((cat, i) => {
