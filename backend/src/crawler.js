@@ -434,7 +434,6 @@ async function loadRemoteFallbackDecoders(encryptedSample, refs) {
       const decoded = encryptedSample ? dec.decode(encryptedSample) : ''
       const conf = encryptedSample ? dec.decodeConfidence(encryptedSample) : null
       if (encryptedSample && !looksLikeSalary(decoded)) continue
-      if (encryptedSample && conf != null && conf < SALARY_CONF_RED) continue
       out.push({ fn: `remote:${url.split('/').pop()}`, dec, conf: conf ?? -1, decoded })
     } catch {}
   }
