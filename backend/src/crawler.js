@@ -402,13 +402,44 @@ function loadOfflineDecoders() {
     try {
       const buf = readFileSync(join(dir, fn))
       const dec = prepareDecoder(buf, refs)
-      if (dec.mapSize === 0) continue // 无 PUA 映射（如 ui-icons 图标字体）跳过
+      if (dec.mapSize === 0) continue
       ranked.push({ fn, dec, conf: confByFile[fn] ?? -1 })
     } catch {}
   }
-  ranked.sort((a, b) => b.conf - a.conf) // 高置信优先；无 confidence 记录者排最后
+  ranked.sort((a, b) => b.conf - a.conf)
   _offlineDecoders = ranked
   return _offlineDecoders
+}
+
+// 二次兜底：本地 .bin 字体在当前环境全部失败时，按 manifest 中的 URL 在线下载后重试。
+// 绕过本地字体解析差异/字体文件损坏，优先返回置信最高的合法薪资形态解码。
+async function loadRemoteFallbackDecoders(encryptedSample, refs) {
+  const dir = join(dataDir, 'boss_fonts')
+  let manifest = { fonts: [] }
+  try { manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf-8')) } catch {}
+  const urls = [...new Set((manifest.fonts || []).map(f => f.url).filter(Boolean))]
+  const out = []
+  const looksLikeSalary = (s) => {
+    if (!s) return false
+    if (/[\uE000-\uF8FF]/.test(s)) return false
+    if (!/\d/.test(s)) return false
+    if (!/[Kk万¥元￥]/.test(s)) return false
+    return true
+  }
+  for (const url of urls) {
+    try {
+      const buf = Buffer.from(await (await fetch(url, { headers: { Referer: 'https://www.zhipin.com/', 'User-Agent': UA, Accept: '*/*' } })).arrayBuffer())
+      const dec = prepareDecoder(buf, refs)
+      if (dec.mapSize === 0) continue
+      const decoded = encryptedSample ? dec.decode(encryptedSample) : ''
+      const conf = encryptedSample ? dec.decodeConfidence(encryptedSample) : null
+      if (encryptedSample && !looksLikeSalary(decoded)) continue
+      if (encryptedSample && conf != null && conf < SALARY_CONF_RED) continue
+      out.push({ fn: `remote:${url.split('/').pop()}`, dec, conf: conf ?? -1, decoded })
+    } catch {}
+  }
+  out.sort((a, b) => b.conf - a.conf)
+  return out
 }
 
 async function getSalaryFontCandidates(cdp) {
@@ -564,8 +595,7 @@ async function buildPageDecoder(cdp, encryptedSample = '', keyword = '') {
       console.log(`[salary] 已落盘 ${dumped.length} 个字体到 data/boss_fonts/（manifest 累计 ${all.length} 个）+ salary_sample.json（可离线 node src/analyze.js --font-test 校验）`)
     }
     if (!chosen) {
-      // 离线兜底：活体页未捕获到可用薪资字体时，复用已落盘字体（经验证对所有页面通用）。
-      // 改为收集所有通过红阈值+合法薪资形态的解码，取置信最高者，避免命中首位低置信错映射。
+      // 本地离线字体兜底
       const offs = loadOfflineDecoders()
       let bestOff = null
       for (const { fn, dec } of offs) {
@@ -573,9 +603,7 @@ async function buildPageDecoder(cdp, encryptedSample = '', keyword = '') {
           const decoded = dec.decode(encryptedSample)
           const conf = dec.decodeConfidence(encryptedSample)
           if (looksLikeSalary(decoded) && (conf == null || conf >= SALARY_CONF_RED)) {
-            if (!bestOff || (conf ?? -1) > (bestOff.lastConfidence ?? -1)) {
-              bestOff = { dec, lastConfidence: conf, decoded }
-            }
+            if (!bestOff || (conf ?? -1) > (bestOff.lastConfidence ?? -1)) bestOff = { dec, lastConfidence: conf, decoded }
           }
         } else {
           if (!bestOff) bestOff = { dec, lastConfidence: null, decoded: '' }
@@ -586,6 +614,17 @@ async function buildPageDecoder(cdp, encryptedSample = '', keyword = '') {
         chosen = bestOff.dec
         chosen.lastConfidence = bestOff.lastConfidence
         console.log(`[salary] 离线字体兜底命中置信最高：${bestOff.decoded}（置信 ${bestOff.lastConfidence == null ? '-' : bestOff.lastConfidence.toFixed(2)}）`)
+      }
+    }
+    if (!chosen) {
+      // 在线字体二次兜底：本地 .bin 均失败时，按 manifest URL 下载原始字体重试。
+      // 该 fallback 必须在 buildPageDecoder 的 try 块内，可访问 encryptedSample / looksLikeSalary。
+      const refs = findReferenceFonts()
+      const remotes = await loadRemoteFallbackDecoders(encryptedSample, refs)
+      if (remotes.length) {
+        chosen = remotes[0].dec
+        chosen.lastConfidence = remotes[0].conf
+        console.log(`[salary] 在线字体兜底命中：${remotes[0].decoded}（置信 ${remotes[0].conf == null ? '-' : remotes[0].conf.toFixed(2)}）`)
       }
     }
     if (!chosen) {
