@@ -5,6 +5,7 @@
 import express from 'express'
 import { DatabaseSync } from 'node:sqlite'
 import { createGzip } from 'node:zlib'
+import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { mkdirSync, readFileSync, existsSync, readdirSync, statSync, unlinkSync, rmdirSync } from 'node:fs'
@@ -72,6 +73,14 @@ if (migrationGate.isPrimary) {
 
 const app = express()
 app.use(express.json({ limit: '2mb' })) // 导入 JD 含 raw 文本，放宽 body 上限
+
+// 全局响应头：所有 /api/* 响应追加 X-Powered-By 与 X-Request-Id（零依赖 request id）。
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) return next()
+  res.set('X-Powered-By', 'JobIntel/Backend')
+  res.set('X-Request-Id', randomUUID().slice(0, 8))
+  next()
+})
 
 // P2：零依赖 gzip 中间件，压缩 JSON API 响应（报告实测 /api/jobs 439KB、/api/analytics 204KB）。
 // 仅当客户端 Accept-Encoding 含 gzip 时启用；静态资源由前端服务器/CDN 负责压缩。
