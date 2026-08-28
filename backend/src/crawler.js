@@ -565,24 +565,27 @@ async function buildPageDecoder(cdp, encryptedSample = '', keyword = '') {
     }
     if (!chosen) {
       // 离线兜底：活体页未捕获到可用薪资字体时，复用已落盘字体（经验证对所有页面通用）。
-      // 仅接受「解出合法薪资形态 且 置信度≥红阈值」的命中，避免错字体误解污染 salary。
+      // 改为收集所有通过红阈值+合法薪资形态的解码，取置信最高者，避免命中首位低置信错映射。
       const offs = loadOfflineDecoders()
+      let bestOff = null
       for (const { fn, dec } of offs) {
         if (encryptedSample) {
           const decoded = dec.decode(encryptedSample)
           const conf = dec.decodeConfidence(encryptedSample)
           if (looksLikeSalary(decoded) && (conf == null || conf >= SALARY_CONF_RED)) {
-            chosen = dec
-            chosen.lastConfidence = conf
-            console.log(`[salary] 离线字体兜底命中 ${fn} -> ${decoded}（置信 ${conf == null ? '-' : conf.toFixed(2)}）`)
-            break
+            if (!bestOff || (conf ?? -1) > (bestOff.lastConfidence ?? -1)) {
+              bestOff = { dec, lastConfidence: conf, decoded }
+            }
           }
         } else {
-          chosen = dec
-          chosen.lastConfidence = null
-          console.log(`[salary] 离线字体兜底命中 ${fn}（无样本，直接采用）`)
+          if (!bestOff) bestOff = { dec, lastConfidence: null, decoded: '' }
           break
         }
+      }
+      if (bestOff) {
+        chosen = bestOff.dec
+        chosen.lastConfidence = bestOff.lastConfidence
+        console.log(`[salary] 离线字体兜底命中置信最高：${bestOff.decoded}（置信 ${bestOff.lastConfidence == null ? '-' : bestOff.lastConfidence.toFixed(2)}）`)
       }
     }
     if (!chosen) {
