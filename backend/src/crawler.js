@@ -636,6 +636,7 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
   const st = await cdp.evaluate(`(() => ({ url: location.href }))()`)
   if (/_security_check|zhipin\.com\/web\/geek\/login/.test(st.url)) {
     console.warn('[crawler] 当前页是登录墙/安全校验，跳过。')
+    console.log('[crawler][harvest] 出口：登录墙')
     return
   }
   // 防护：若仍是详情页（/job_detail/）而非搜索结果页，说明上一轮详情导航还没让位给本轮搜索页渲染，
@@ -658,6 +659,7 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
   if (res.count === 0) {
     const snippet = await cdp.evaluate(`(() => document.body ? document.body.innerHTML.slice(0, 1500) : '')()`)
     console.warn('[crawler] 0 卡片，页面片段（用于校准选择器）：\n' + snippet)
+    console.log('[crawler][harvest] 出口：0 卡片')
     return
   }
   // 本页建一次解码器（字体通常整页共用），首个带薪资的卡片作为离线落盘样本
@@ -841,10 +843,15 @@ async function runCDP() {
       const { keyword, url, role, city } = urls[i]
       let failed = null
       try {
+        console.log(`[crawler][loop] 开始第 ${i+1}/${urls.length} 个搜索：${keyword} @ ${city}`)
         await cdp.send('Page.navigate', { url })
+        console.log(`[crawler][loop] 导航完成：${keyword}`)
         await sleep(1500)
+        console.log(`[crawler][loop] 开始 harvest：${keyword}`)
         await harvestCDP(cdp, keyword, url, role, city)
+        console.log(`[crawler][loop] harvest 完成：${keyword}`)
       } catch (e) {
+        console.error(`[crawler][loop] 第 ${i+1} 个搜索异常：`, e?.message || e)
         failed = e
       }
       if (failed) {
