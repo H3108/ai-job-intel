@@ -24,7 +24,7 @@ import { readFileSync, mkdirSync, writeFileSync, existsSync, readdirSync } from 
 import { createInterface } from 'node:readline'
 import { spawn } from 'node:child_process'
 import { RateLimiter } from './rate-limiter.js'
-import { buildSearchUrl, buildSearchUrls, resolveRole, resolveCity } from './search-templates.js'
+import { buildSearchUrl, buildSearchUrls, resolveRole, resolveCity, CITIES } from './search-templates.js'
 import { loadCrawlerConfig } from '../config/load.js'
 import { ensureSalaryColumns } from './importer.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope } from './migrate.js'
@@ -322,7 +322,7 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
     return { count: 0, data: [], viaApi: false }
   }
   console.log('[api] 使用 token 类型:', token === cookies.wt2 ? 'wt2' : token === cookies.zpAt ? 'zp_at' : token === cookies.bst ? 'bst' : token === cookies.token ? 'token' : 'stoken')
-  const city = selectedCity ? selectedCity.code : '101280600'
+  const city = (searchCityName ? (CITIES[searchCityName] || selectedCity?.code) : selectedCity?.code) || '101280600'
   const query = encodeURIComponent(keyword || '')
   const body = `page=${page}&pageSize=20&city=${city}&query=${query}&scene=1&expectInfo=&multiSubway=&multiBusinessDistrict=&position=&jobType=&salary=&experience=&degree=&industry=&scale=&stage=`
   const xhrExpr = "(() => { return new Promise((resolve) => { const xhr = new XMLHttpRequest(); xhr.open('POST', '/wapi/zpgeek/search/joblist.json', false); xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Referer', location.href); xhr.setRequestHeader('Origin', 'https://www.zhipin.com'); xhr.setRequestHeader('zp_token', '" + token + "'); xhr.setRequestHeader('token', '" + token + "'); xhr.onload = () => { try { const d = JSON.parse(xhr.responseText); resolve({ ok: d.code === 0, data: d.zpData || {}, raw: xhr.responseText }); } catch(e) { resolve({ ok: false, error: e.message }); } }; xhr.onerror = () => resolve({ ok: false, error: 'xhr network error' }); xhr.send('" + body + "'); }); })()"
@@ -369,8 +369,8 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
 }
 
 // 分页采集：自动翻页直到无数据或达到城市页数限制
-async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name) {
-  const city = selectedCity ? selectedCity.name : '深圳'
+async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, searchCityName = selectedCity.name) {
+  const city = searchCityName || selectedCity?.name || '深圳'
   const maxPages = CITY_PAGE_LIMITS[city] || 1
   console.log(`[api][debug] crawlViaApiCDPAllPages: city=${city}, maxPages=${maxPages}, keyword=${keyword}`)
   let allData = []
@@ -547,7 +547,7 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
     }
   }
   // 优先走 API-first 采集，绕过 DOM 稳定性问题
-  const apiRes = await crawlViaApiCDPAllPages(cdp, keyword, navUrl, searchRoleName)
+  const apiRes = await crawlViaApiCDPAllPages(cdp, keyword, navUrl, searchRoleName, searchCityName)
   if (apiRes.count > 0) {
     console.log(`[crawler] API-first 采集成功：${apiRes.count} 张卡片`)
     const { importJobs } = await import('./importer.js')
