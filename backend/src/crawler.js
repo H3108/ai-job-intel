@@ -665,6 +665,13 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
       return
     }
   }
+  // 优先走 API-first 采集，绕过 DOM 稳定性问题
+  const apiRes = await crawlViaApiCDP(cdp, keyword, navUrl)
+  if (apiRes.count > 0) {
+    console.log(`[crawler] API-first 采集成功：${apiRes.count} 张卡片`)
+    return apiRes
+  }
+  console.warn('[crawler] API-first 采集失败或 0 结果，回退到 DOM 采集')
   await waitCardsCDP(cdp)
   // 滚动触发懒加载（Boss 用虚拟滚动，首屏只有部分卡片在 DOM 中）
   await scrollToLoadCDP(cdp)
