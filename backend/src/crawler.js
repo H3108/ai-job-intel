@@ -366,6 +366,38 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
   return { count: mapped.length, data: mapped, viaApi: true }
 }
 
+// 分页采集：自动翻页直到无数据或达到城市页数限制
+async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name) {
+  const city = selectedCity ? selectedCity.name : '深圳'
+  const maxPages = CITY_PAGE_LIMITS[city] || 1
+  let allData = []
+  let page = 1
+  const pageSize = 20
+  
+  while (page <= maxPages) {
+    console.log(`[api] ${city} "${keyword}" 第 ${page}/${maxPages} 页`)
+    const result = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName)
+    if (!result.viaApi || result.count === 0) {
+      console.log(`[api] ${city} "${keyword}" 第 ${page} 页无数据，停止翻页`)
+      break
+    }
+    allData = allData.concat(result.data)
+    page++
+    
+    // 如果返回条数少于 pageSize，说明已到最后一页
+    if (result.count < pageSize) {
+      console.log(`[api] ${city} "${keyword}" 第 ${page-1} 页条数不足 ${pageSize}，停止翻页`)
+      break
+    }
+    
+    // 翻页延迟
+    await sleep(500)
+  }
+  
+  console.log(`[api] ${city} "${keyword}" 分页完成：共 ${allData.length} 条（${page-1} 页）`)
+  return { count: allData.length, data: allData, viaApi: true }
+}
+
 async function scrapeViaCDP(cdp) {
   // 稳健抽取：不依赖 .job-card-wrapper（你的 Boss 布局用的是 div/li[data-v-xxxx]）。
   // 直接定位职位标题链接 a[href*="job_detail"]，向上找含公司链接的卡片容器，按 href 去重。
