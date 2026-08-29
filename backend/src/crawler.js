@@ -249,6 +249,16 @@ async function ensureLoginCDP(cdp) {
 
 async function waitCardsCDP(cdp, timeoutMs = 60000) {
   const start = Date.now()
+  // 防护：Boss 有时会把搜索 URL 重定向/降级成空 query 或推荐页，先修正回当前关键词的搜索 URL
+  const current = await cdp.evaluate(`(() => ({ href: location.href, query: new URLSearchParams(location.search).get('query') }))()`)
+  if (!current.query) {
+    const fixed = TARGETS.find(t => t.url.startsWith('https://www.zhipin.com/web/geek/jobs?query=')) || TARGETS[0]
+    if (fixed) {
+      console.warn('[crawler][wait] 检测到空 query，修正到搜索 URL:', fixed.url)
+      await cdp.send('Page.navigate', { url: fixed.url })
+      await sleep(2000)
+    }
+  }
   console.log('[crawler][wait] 开始等待卡片，timeout=' + timeoutMs)
   // 第一阶段：等 SPA 加载骨架消失（"加载中"转圈不再可见）
   while (Date.now() - start < timeoutMs) {
@@ -778,7 +788,10 @@ async function runCDP() {
     const needsNav = !/zhipin\.com\/web\/geek\/jobs/.test(target.url || '') ||
                      !/query=/.test(target.url || '') ||
                      !/city=/.test(target.url || '')
+    console.log('[crawler][connect] 当前页面 URL:', target.url)
+    console.log('[crawler][connect] 是否需要导航:', needsNav)
     if (needsNav) {
+      console.log('[crawler][connect] 导航到:', firstUrl)
       await cdp.send('Page.navigate', { url: firstUrl })
       await sleep(2000)
     }
