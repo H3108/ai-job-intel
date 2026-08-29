@@ -308,6 +308,64 @@ async function scrollToLoadCDP(cdp, maxScrollRounds = 8) {
   }
 }
 
+async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name) {
+  // API-first 采集：绕过 DOM，直接用 Boss 搜索 API
+  // 从 cookie 中提取可用 token，按优先级尝试
+  const cookiesExpr = "(() => { const cookies = document.cookie.split(';').reduce((a, b) => { const [k, v] = b.trim().split('='); a[k] = v; return a; }, {}); return { wt2: cookies['wt2'] || '', zpAt: cookies['zp_at'] || '', bst: cookies['bst'] || '', stoken: cookies['__zp_stoken__'] || '', token: cookies['token'] || '' }; })()"
+  const cookies = await cdp.evaluate(cookiesExpr)
+  // 按优先级尝试：wt2 > zp_at > bst > token > stoken
+  const token = cookies.wt2 || cookies.zpAt || cookies.bst || cookies.token || cookies.stoken || ''
+  if (!token) {
+    console.warn('[api] 未找到登录 token，跳过 API 采集')
+    console.warn('[api] 可用 cookie keys:', Object.keys(cookies).filter(k => cookies[k]).join(', '))
+    return { count: 0, data: [], viaApi: false }
+  }
+  console.log('[api] 使用 token 类型:', token === cookies.wt2 ? 'wt2' : token === cookies.zpAt ? 'zp_at' : token === cookies.bst ? 'bst' : token === cookies.token ? 'token' : 'stoken')
+  const city = selectedCity ? selectedCity.code : '101280600'
+  const query = encodeURIComponent(keyword || '')
+  const body = `page=1&pageSize=20&city=${city}&query=${query}&scene=1&expectInfo=&multiSubway=&multiBusinessDistrict=&position=&jobType=&salary=&experience=&degree=&industry=&scale=&stage=`
+  const xhrExpr = "(() => { return new Promise((resolve) => { const xhr = new XMLHttpRequest(); xhr.open('POST', '/wapi/zpgeek/search/joblist.json', false); xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Referer', location.href); xhr.setRequestHeader('Origin', 'https://www.zhipin.com'); xhr.setRequestHeader('zp_token', '" + token + "'); xhr.setRequestHeader('token', '" + token + "'); xhr.onload = () => { try { const d = JSON.parse(xhr.responseText); resolve({ ok: d.code === 0, data: d.zpData || {}, raw: xhr.responseText }); } catch(e) { resolve({ ok: false, error: e.message }); } }; xhr.onerror = () => resolve({ ok: false, error: 'xhr network error' }); xhr.send('" + body + "'); }); })()"
+  const apiResult = await cdp.evaluate(xhrExpr)
+  if (!apiResult.ok) {
+    console.warn('[api] 请求失败:', apiResult.error || apiResult.data.message)
+    return { count: 0, data: [], viaApi: false }
+  }
+  const zpData = apiResult.data
+  const jobList = zpData.jobList || []
+  console.log(`[api] 获取到 ${jobList.length} 条岗位（总数 ${zpData.resCount || 0}）`)
+  const mapped = jobList.map(job => ({
+    id: 'boss_' + (job.encryptJobId || job.securityId || Math.random().toString(36).slice(2)),
+    title: job.jobName || '',
+    company: job.brandName || job.bossName || '',
+    location: job.cityName || selectedCity.name,
+    salary: job.salaryDesc || '',
+    experience: job.jobExperience || '',
+    education: job.jobDegree || '',
+    raw: '',
+    extracted: JSON.stringify({
+      source: 'api',
+      keyword,
+      city: selectedCity.name,
+      jobLabels: job.jobLabels,
+      skills: job.skills,
+      welfareList: job.welfareList,
+      areaDistrict: job.areaDistrict,
+      businessDistrict: job.businessDistrict,
+      industry: job.industry,
+      brandStageName: job.brandStageName,
+      brandScaleName: job.brandScaleName
+    }),
+    status: 'collected',
+    first_seen: new Date().toISOString(),
+    last_seen: new Date().toISOString(),
+    search_role: searchRoleName || keyword,
+    role_family: '',
+    role_function: '',
+    role_language: ''
+  }))
+  return { count: mapped.length, data: mapped, viaApi: true }
+}
+
 async function scrapeViaCDP(cdp) {
   // 稳健抽取：不依赖 .job-card-wrapper（你的 Boss 布局用的是 div/li[data-v-xxxx]）。
   // 直接定位职位标题链接 a[href*="job_detail"]，向上找含公司链接的卡片容器，按 href 去重。
@@ -666,9 +724,32 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
     }
   }
   // 优先走 API-first 采集，绕过 DOM 稳定性问题
-  const apiRes = await crawlViaApiCDP(cdp, keyword, navUrl)
+  const apiRes = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName)
   if (apiRes.count > 0) {
     console.log(`[crawler] API-first 采集成功：${apiRes.count} 张卡片`)
+    const { importJobs } = await import('./importer.js')
+    let inserted = 0
+    let updated = 0
+    for (const c of apiRes.data) {
+      const r = importJobs(db, [{
+        title: c.title,
+        company: c.company,
+        raw: c.raw || '',
+        extracted: c.extracted || '',
+        location: searchCityName,
+        role: searchRoleName,
+        search_role: searchRoleName,
+        status: 'collected',
+        salary: c.salary || '',
+        experience: c.experience || '',
+        education: c.education || ''
+      }])
+      inserted += r.inserted
+      updated += r.updated
+    }
+    console.log(`[crawler] API 入库 ${inserted} / 更新 ${updated}`)
+    RUN_NEW += inserted
+    RUN_UPDATED += updated
     return apiRes
   }
   console.warn('[crawler] API-first 采集失败或 0 结果，回退到 DOM 采集')
