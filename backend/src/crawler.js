@@ -25,6 +25,7 @@ import { createInterface } from 'node:readline'
 import { spawn } from 'node:child_process'
 import { RateLimiter } from './rate-limiter.js'
 import { buildSearchUrl, buildSearchUrls, resolveRole, resolveCity } from './search-templates.js'
+import { loadCrawlerConfig } from '../config/load.js'
 import { ensureSalaryColumns } from './importer.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope } from './migrate.js'
 // font-decrypt 已移除，API 直接返回明文字段
@@ -100,6 +101,7 @@ const CITY_PAGE_LIMITS = (() => {
     return m
   } catch (e) {
     console.warn('[crawler] crawler.yaml 读取失败，回退默认 1 页：', e.message)
+    console.warn('[crawler] error stack:', e.stack)
     return {}
   }
 })()
@@ -370,6 +372,7 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
 async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name) {
   const city = selectedCity ? selectedCity.name : '深圳'
   const maxPages = CITY_PAGE_LIMITS[city] || 1
+  console.log(`[api][debug] crawlViaApiCDPAllPages: city=${city}, maxPages=${maxPages}, keyword=${keyword}`)
   let allData = []
   let page = 1
   const pageSize = 20
