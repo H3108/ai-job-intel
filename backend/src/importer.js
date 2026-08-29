@@ -209,6 +209,10 @@ export function importJobs(db, jobs) {
   list.forEach((input, i) => {
     try {
       const row = normalize(input, i)
+      if (!row) {
+        // 跳过被宽匹配过滤掉的岗位
+        return
+      }
       const r = upsert(db, row, ts)
       if (r.action === 'inserted') inserted++
       else updated++
