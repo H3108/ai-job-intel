@@ -14,7 +14,7 @@ import { importJobs, ensureSalaryColumns } from './importer.js'
 import { insights, roleDetail, getProfile, saveProfile, scopeFilter, parseSalary, LEVEL_WEIGHT, CATEGORY_PRECEDENCE } from './analyze.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope, ensureTaxonomyColumns } from './migrate.js'
 import { createMigrationGate } from './migration-gate.js'
-import { loadCrawlerConfig } from './config/load.js'
+import { loadCrawlerConfig } from '../config/load.js'
 import { classifyRole } from './role-normalize.js'
 
 // 岗位细分方向（规则聚类，零依赖）。把 89 条标题按关键词桶归类，
@@ -332,7 +332,22 @@ app.get('/api/scopes', (_req, res) => {
       .all()
       .map((r) => r.location)
       .filter((c) => ALLOWED_CITIES.includes(c))
-    const mergedCities = Array.from(new Set([...cities, ...plannedCities])).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'))
+    const __CITY_ORDER = (() => {
+      try {
+        const cfg = loadCrawlerConfig()
+        return Object.keys(cfg.cities || {})
+      } catch (e) {
+        return ['深圳', '广州', '惠州', '东莞']
+      }
+    })()
+    const mergedCities = Array.from(new Set([...cities, ...plannedCities])).sort((a, b) => {
+      const ia = __CITY_ORDER.indexOf(a)
+      const ib = __CITY_ORDER.indexOf(b)
+      if (ia === -1 && ib === -1) return a.localeCompare(b, 'zh-Hans-CN')
+      if (ia === -1) return 1
+      if (ib === -1) return -1
+      return ia - ib
+    })
     // 方案 D：附加每角色的已分析样本量，供跨角色对比页的角色选择器显示数据充分度。
     // 同时带出 func(职能大类)/family(岗族)，供前端「先切职能大类→再下钻岗族」两级视图。
     const roleStats = db
@@ -498,7 +513,7 @@ app.get('/api/compare', (req, res) => {
 // 支持 ?role=（归一化角色，与 /api/analytics、/api/compare、/api/jobs 同口径）+ ?city= 作用域。
 app.get('/api/role-detail', (req, res) => {
   try {
-    const role = String(req.query.role || '前端工程师')
+    const role = String(req.query.role || loadCrawlerConfig().defaultRole || '前端工程师')
     const scope = {}
     if (req.query.city) scope.city = String(req.query.city)
     scope.role = role

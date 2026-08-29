@@ -147,7 +147,7 @@ export default function DesignSystemShowcase() {
       <Section title="表单 Form">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="目标岗位" hint="例如：AI Agent 前端">
-            <Input placeholder="输入岗位名" defaultValue="前端工程师" />
+            <Input placeholder="输入岗位名" defaultValue="AI Agent 前端" />
           </Field>
           <Field label="城市" error="请选择城市">
             <Select invalid defaultValue="">

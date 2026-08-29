@@ -71,7 +71,7 @@ export default function RoleDetailPage() {
   }, [scopesQ.data])
 
   const role =
-    params.get("role") || scopesQ.data?.defaultRole || roles[0] || "前端工程师"
+    params.get("role") || scopesQ.data?.defaultRole || roles[0] || "AI Agent 前端"
 
   // 职能大类（L1）：直接由当前角色派生，无需额外 state / effect 同步，避免挂载瞬间闪错。
   const func = roleInfo.get(role)?.func || "技术"

@@ -60,7 +60,7 @@ export default function AnalysisShowcasePage() {
   // 真实数据演示：拉两个角色，渲染 roleTiers 派生结果（与角色对比页同一写法）。
   const { data, isLoading, error } = useQuery({
     queryKey: ["showcase-compare"],
-    queryFn: () => fetchCompare({ mode: 'role', roles: ["前端工程师", "算法工程师"] }),
+    queryFn: () => fetchCompare({ mode: 'role', roles: ["AI Agent 前端", "算法工程师"] }),
   })
 
   return (
