@@ -63,7 +63,7 @@ test('/api/health 结构正确', async () => {
   assert.equal(j.ok, true)
   assert.equal(typeof j.status, 'string')
   assert.equal(typeof j.total, 'number')
-  assert.equal(typeof j.salaryLowConfRed, 'number')
+  assert.equal(typeof j.salaryDecoded, 'number')
 })
 
 test('/api/analytics 结构正确', async () => {
