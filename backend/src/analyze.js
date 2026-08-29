@@ -717,7 +717,7 @@ export function roleDetail(db, targetRole = 'AI Agent 前端', scope = null) {
   return {
     ...agg,
     salaryPercentiles: { p25: pctOf(mins, 25), p50: pctOf(mins, 50), p75: pctOf(mins, 75), p90: pctOf(mins, 90) },
-    salaryConfidence: { high, yellow, red, null: 0, total: confRows.length },
+
     companyTop,
     skillByCategory,
     skillByLevel,

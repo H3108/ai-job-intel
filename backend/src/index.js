@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { mkdirSync, readFileSync, existsSync, readdirSync, statSync, unlinkSync, rmdirSync } from 'node:fs'
 import { spawn } from 'node:child_process'
-import { importJobs, ensureSalaryColumns } from './importer.js'
+import { importJobs } from './importer.js'
 import { insights, roleDetail, getProfile, saveProfile, scopeFilter, parseSalary, LEVEL_WEIGHT, CATEGORY_PRECEDENCE } from './analyze.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope, ensureTaxonomyColumns } from './migrate.js'
 import { createMigrationGate } from './migration-gate.js'
@@ -60,8 +60,7 @@ db.exec(schema)
 
 if (migrationGate.isPrimary) {
   // 仅在「首个实例」执行写迁移（幂等），完成后释放锁，让后续实例跳过，消除抢锁崩溃窗口。
-  ensureSalaryColumns(db) // 补齐薪资解密列（已存在的库）
-  ensureTaxonomyColumns(db) // 补齐岗族三列（role_family/role_function/role_language）
+    ensureTaxonomyColumns(db) // 补齐岗族三列（role_family/role_function/role_language）
   ensureNormalizedSchema(db) // 方案 B：jobs.education_level + job_skills 子表
   backfillNormalized(db) // 增量回填（幂等）
   backfillScope(db) // 方案 C：存量岗位打上角色模板标签，使 scope 筛选可用
@@ -126,34 +125,28 @@ if (API_TOKEN) {
 // 采集健康度（看板状态灯）：从 crawl_runs(最新一次) + jobs 派生真实信号。
 // Salary 校验 SOP：除解码率外，额外暴露低置信占比，超阈值置 warn（对齐 Phase4 健康指标）。
 // 薪资解密已移除，API 直接返回明文字段
-const SALARY_LOWCNF_WARN_RATE = 0.1
 app.get('/api/health', (_req, res) => {
   try {
     const total = db.prepare('SELECT COUNT(*) AS n FROM jobs').get().n
-    const salaryDecoded = db
-      .prepare("SELECT COUNT(*) AS n FROM jobs WHERE salary IS NOT NULL AND salary <> ''")
-      .get().n
-    const salaryRate = total ? Math.round((salaryDecoded / total) * 100) : 0
     const lastRun = db.prepare('SELECT * FROM crawl_runs ORDER BY id DESC LIMIT 1').get() || null
-    // 健康灯由“实时数据”决定，不再被上次采集的任何告警(lastRun.status)强制覆盖：
-    // 上次采集告警仅是运营日志，通过 lastRun 字段返回（Dashboard 仍展示“本次告警 N 条”），不再点亮红灯。
-    let status = 'unknown'
-    if (lastRun || salaryDecoded) {
-      if (salaryRate < 50) status = 'warn' // 薪资数据率过低：检查 API 采集
-      else status = 'ok'
-    }
+    const status = lastRun && lastRun.status === 'ok' ? 'ok' : 'warn'
     res.json({
       ok: true,
       ts: Date.now(),
       total,
-      salaryDecoded,
-      salaryRate,
       status,
-      lastRun
+      lastRun: lastRun ? {
+        id: lastRun.id,
+        ran_at: lastRun.ran_at,
+        mode: lastRun.mode,
+        status: lastRun.status,
+        keywords_total: lastRun.keywords_total,
+        jobs_new: lastRun.jobs_new,
+        jobs_updated: lastRun.jobs_updated,
+      } : null
     })
   } catch (e) {
-    // 表可能尚不存在（未跑过新版本 crawl）→ 返回 unknown 而非 500
-    res.json({ ok: true, ts: Date.now(), total: 0, salaryDecoded: 0, salaryRate: 0, salaryLowConf: 0, salaryLowConfRate: 0, salaryLowConfRed: 0, salaryLowConfRedRate: 0, status: 'unknown', lastRun: null })
+    res.json({ ok: true, ts: Date.now(), total: 0, status: 'unknown', lastRun: null })
   }
 })
 

@@ -290,13 +290,6 @@ export interface Health {
   ok: boolean
   ts: number
   total: number
-  salaryDecoded: number
-  salaryRate: number // 薪资已解密覆盖比例 %
-  salaryLowConf: number // 黄区薪资数（confidence < 0.85）：字形比对打分器正常输出区间，仅分布展示，不点亮告警灯
-  salaryLowConfRate: number // 黄区占比 %（仅展示，不再触发 warn）
-  salaryLowConfRed: number // 红区薪资数（confidence < 0.70）：真正解码风险区，健康灯以此为准
-  salaryLowConfRedRate: number // 红区占比 %（>10 即 warn）
-  salaryConfThresholds: { yellow: number; red: number }
   status: 'ok' | 'warn' | 'unknown'
   lastRun: CrawlRun | null
 }

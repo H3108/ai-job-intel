@@ -132,10 +132,6 @@ export default function Dashboard() {
           <span>
             样本 <b className="font-semibold text-text">{health.total}</b> 条
           </span>
-          <span className="text-muted">·</span>
-          <span>
-            薪资解密 <b className="font-semibold text-text">{health.salaryRate}%</b>
-          </span>
           {health.lastRun && (
             <>
               <span className="text-muted">·</span>

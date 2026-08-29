@@ -231,7 +231,7 @@ export function normalizeRole(raw) {
   //       Agent前端开发工程师 / 智能体前端负责人 等。
   if (
     /(前端|react|vue|angular|electron|web|小程序|node\.?js)/i.test(t0) &&
-    /(ai\s*agent|agent\s*方向|agent\s*前端|智能体|ai\s*方向|ai\s*应用\s*方向|ai\s*agent\s*方向|ai\s*智能体\s*方向|ai\s*[-_]?\s*前端|前端\s*[-_]?\s*ai|大模型前端|llm前端|aigc前端)/i.test(t0)
+    /(ai\s*agent|agent\s*方向|agent\s*前端|智能体|ai\s*方向|ai\s*应用\s*方向|ai\s*agent\s*方向|ai\s*智能体\s*方向|ai\s*[-_]?\s*前端|前端\s*[-_]?\s*ai|大模型前端|llm前端|aigc前端|ai\s*工具|ai\s*经验|ai\s*产品|ai\s*研发|ai\s*平台|ai\s*游戏|ai\s*客户端|ai\s*外企)/i.test(t0)
   ) {
     return 'AI Agent 前端'  // 主分类：AI Agent 前端
   }

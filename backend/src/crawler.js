@@ -26,7 +26,6 @@ import { spawn } from 'node:child_process'
 import { RateLimiter } from './rate-limiter.js'
 import { buildSearchUrl, buildSearchUrls, resolveRole, resolveCity, CITIES } from './search-templates.js'
 import { loadCrawlerConfig } from '../config/load.js'
-import { ensureSalaryColumns } from './importer.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope } from './migrate.js'
 // font-decrypt 已移除，API 直接返回明文字段
 import { loadDotEnv } from './analyze.js'
@@ -40,7 +39,6 @@ mkdirSync(PROFILE_DIR, { recursive: true })
 
 const db = new DatabaseSync(join(dataDir, 'jobs.db'))
 db.exec(readFileSync(join(dataDir, 'schema.sql'), 'utf-8'))
-ensureSalaryColumns(db) // 补齐薪资解密列（已存在的库）
 ensureNormalizedSchema(db) // 方案 B：jobs.education_level + job_skills 子表
 backfillNormalized(db) // 增量回填（幂等）
 backfillScope(db) // 方案 C：存量岗位打上角色模板标签，使 scope 筛选可用

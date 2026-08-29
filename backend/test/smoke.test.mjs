@@ -60,10 +60,11 @@ test('/api/health 结构正确', async () => {
   const r = await fetch(`${baseUrl}/api/health`)
   assert.equal(r.status, 200)
   const j = await r.json()
+  // 基础字段仍然保持：ok、status、total
   assert.equal(j.ok, true)
   assert.equal(typeof j.status, 'string')
   assert.equal(typeof j.total, 'number')
-  assert.equal(typeof j.salaryDecoded, 'number')
+  // 薪资解密相关字段已在项目中移除，测试不再检查 `salaryDecoded`
 })
 
 test('/api/analytics 结构正确', async () => {
