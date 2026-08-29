@@ -915,6 +915,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log('[font-test] 如需离线字体测试，请使用 --font-test 命令')
     const seen = new Set()
     let dup = 0
+    for (const [cp, d] of dec.map.entries()) {
       if (seen.has(d)) dup++
       seen.add(d)
       console.log('  U+' + cp.toString(16).toUpperCase().padStart(4, '0') + ' -> ' + d)
