@@ -785,7 +785,8 @@ async function runCDP() {
       const loginResult = await ensureLoginCDP(cdp);
       if (loginResult === 'AUTH_REQUIRED') {
         console.warn('[crawler] 检测到未登录，AUTH_REQUIRED，退出采集。');
-        return;
+        ALERTS.push('AUTH_REQUIRED：Boss 登录态失效，需要人工重新登录。');
+        throw new Error('AUTH_REQUIRED');
       }
       if (loginResult === true) {
         loginOk = true;
