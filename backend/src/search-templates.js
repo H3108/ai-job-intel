@@ -93,6 +93,12 @@ export const BROAD_RULE = {
   mustInclude: ['前端'],
   anyOf: ['AI', '大模型', 'LLM', 'Agent', '智能体', 'AIGC', 'React', 'Vue', 'Next.js']
 }
+
+// 前端岗位直接保留（核心需求），AI信号为加分项
+export function isCoreFrontend(title = '') {
+  const t = title.toLowerCase()
+  return /前端|react|vue|angular|electron|web|小程序|node\.?js|next\.js/i.test(t)
+}
 export function matchesBroad(title = '') {
   const t = title.toLowerCase()
   const hasFrontend = BROAD_RULE.mustInclude.every((w) => t.includes(w.toLowerCase()))

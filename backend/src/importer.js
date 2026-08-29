@@ -36,6 +36,10 @@ function normalize(input, index) {
         ? input.extracted
         : JSON.stringify(input.extracted)
   }
+  // 宽匹配过滤：只保留前端+AI信号岗位
+  if (!isCoreFrontend(title)) {
+    return null  // 跳过不匹配的岗位
+  }
   return {
     id: input.id || genId({ title, company: input.company, location: input.location }),
     title,
