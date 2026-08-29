@@ -36,10 +36,11 @@ function normalize(input, index) {
         ? input.extracted
         : JSON.stringify(input.extracted)
   }
-  // 宽匹配过滤：只保留前端+AI信号岗位
-  if (!isCoreFrontend(title)) {
-    return null  // 跳过不匹配的岗位
-  }
+  // 宽匹配过滤：暂时关闭，先把数据抓回来
+  // TODO: 后面优化 isCoreFrontend 后再开启
+  // if (!isCoreFrontend(title)) {
+  //   return null  // 跳过不匹配的岗位
+  // }
   return {
     id: input.id || genId({ title, company: input.company, location: input.location }),
     title,
@@ -66,14 +67,24 @@ function resolveId(db, row) {
     const byNorm = db
       .prepare('SELECT id FROM jobs WHERE company IS ? AND normalized_title = ? AND location = ? LIMIT 1')
       .get(row.company, row.normalized_title, row.location)
-    if (byNorm) return byNorm.id
+    if (byNorm) {
+      console.log(`[importer] 去重命中(normalized_title): ${row.company} / ${row.normalized_title} / ${row.location}`)
+      return byNorm.id
+    }
   }
   const byKey = db
     .prepare('SELECT id FROM jobs WHERE company IS ? AND title = ? AND location = ? LIMIT 1')
     .get(row.company, row.title, row.location)
-  if (byKey) return byKey.id
+  if (byKey) {
+    console.log(`[importer] 去重命中(title): ${row.company} / ${row.title} / ${row.location}`)
+    return byKey.id
+  }
   const byId = db.prepare('SELECT id FROM jobs WHERE id = ?').get(row.id)
-  if (byId) return byId.id
+  if (byId) {
+    console.log(`[importer] 去重命中(id): ${row.id}`)
+    return byId.id
+  }
+  console.log(`[importer] 新数据: ${row.company} / ${row.title} / ${row.location}`)
   return null
 }
 
@@ -114,9 +125,9 @@ function upsert(db, row, ts) {
   try {
     db.prepare(
       `INSERT INTO jobs
-       (id, title, normalized_title, company, location, role, search_role, salary, salary_raw, salary_confidence,
+       (id, title, normalized_title, company, location, role, search_role, salary, salary_raw,
         experience, education, raw, extracted, status, first_seen, last_seen, user_note)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).run(
       row.id,
       row.title,
@@ -127,7 +138,6 @@ function upsert(db, row, ts) {
       row.search_role,
       row.salary,
       row.salary_raw,
-
       row.experience,
       row.education,
       row.raw,
@@ -189,16 +199,22 @@ export function ensureSalaryColumns(db) {
 export function importJobs(db, jobs) {
   const list = Array.isArray(jobs) ? jobs : [jobs]
   const ts = nowStamp()
-  const result = { inserted: 0, updated: 0, errors: [] }
+  let inserted = 0
+  let updated = 0
+  const errors = []
+  let lastAction = null
+  let lastId = null
   list.forEach((input, i) => {
     try {
       const row = normalize(input, i)
       const r = upsert(db, row, ts)
-      if (r.action === 'inserted') result.inserted++
-      else result.updated++
+      if (r.action === 'inserted') inserted++
+      else updated++
+      lastAction = r.action
+      lastId = r.id
     } catch (e) {
-      result.errors.push({ index: i, message: e.message })
+      errors.push({ index: i, message: e.message })
     }
   })
-  return result
+  return { inserted, updated, errors, action: lastAction, id: lastId }
 }

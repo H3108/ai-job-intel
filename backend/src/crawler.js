@@ -33,7 +33,7 @@ import { loadDotEnv } from './analyze.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..', '..')
-const dataDir = join(root, 'data')
+const dataDir = join(__dirname, '..', '..', 'data')  // use /var/www/jobintel/data
 const PROFILE_DIR = join(dataDir, 'boss_profile')
 mkdirSync(dataDir, { recursive: true })
 mkdirSync(PROFILE_DIR, { recursive: true })
@@ -348,10 +348,11 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
   const zpData = apiResult.data
   const jobList = zpData.jobList || []
   console.log(`[api] 获取到 ${jobList.length} 条岗位（总数 ${zpData.resCount || 0}）`)
+  console.log(`[api] 返回数据样例：encryptJobId=${jobList[0]?.encryptJobId}, securityId=${jobList[0]?.securityId}, jobName=${jobList[0]?.jobName}`)
   const mapped = jobList.map(job => ({
     id: 'boss_' + (job.encryptJobId || job.securityId || Math.random().toString(36).slice(2)),
     title: job.jobName || '',
-    company: job.brandName || job.bossName || '',
+    company: job.bossName || job.brandName || '',  // use bossName first for dedup
     location: job.cityName || selectedCity.name,
     salary: job.salaryDesc || '',
     salary_raw: job.salaryDesc || '',  // API 返回明文，不再加密
@@ -566,11 +567,12 @@ async function getSalaryFontCandidates(cdp) {
 // 选"解码出合法薪资形态（数字+K/万）"的那个。
 // 薪资解密已迁移到 API-first 采集，直接使用明文字段
 async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, searchCityName = selectedCity.name) {
-  const st = await cdp.evaluate(`(() => ({ url: location.href }))()`)
-  if (/_security_check|zhipin\.com\/web\/geek\/login/.test(st.url)) {
-    console.warn('[crawler] 当前页是登录墙/安全校验，跳过。')
+  const st = await cdp.evaluate(`(() => ({ url: location.href, hasLogin: !!document.querySelector('a[href*="login"], .login-btn, [class*="login"]') }))()`)
+  if (/_security_check|zhipin\.com\/web\/geek\/login/.test(st.url) || st.hasLogin) {
+    console.warn('[crawler] 当前页是登录墙/安全校验/未登录态，跳过。')
     console.log('[crawler][harvest] 出口：登录墙')
-    return
+    ALERTS.push('登录态失效：检测到登录页/安全校验，采集中断。')
+    throw new Error('AUTH_REQUIRED')
   }
   // 防护：若仍是详情页（/job_detail/）而非搜索结果页，说明上一轮详情导航还没让位给本轮搜索页渲染，
   // 此时 a[href*=job_detail] 命中的是详情页“相关职位”，会产生脏标题（如「职位搜索」）。
@@ -587,11 +589,12 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
   // 优先走 API-first 采集，绕过 DOM 稳定性问题
   const apiRes = await crawlViaApiCDPAllPages(cdp, keyword, navUrl, searchRoleName, searchCityName)
   if (apiRes.count > 0) {
-    console.log(`[crawler] API-first 采集成功：${apiRes.count} 张卡片`)
+    console.log(`[crawler] API-first 采集成功：${apiRes.count} 张卡片，data.length=${apiRes.data.length}`)
     const { importJobs } = await import('./importer.js')
     let inserted = 0
     let updated = 0
     for (const c of apiRes.data) {
+      console.log(`[crawler] 处理卡片: ${c.title} / ${c.company} / ${c.location}`)
       const r = importJobs(db, [{
         title: c.title,
         company: c.company,
@@ -605,8 +608,9 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
         experience: c.experience || '',
         education: c.education || ''
       }])
-      inserted += r.action === "inserted" ? 1 : 0
-      updated += r.action === "updated" ? 1 : 0
+      console.log(`[crawler] importJobs 返回: ${r.action} (id=${r.id})`)
+      inserted += r.inserted || 0
+      updated += r.updated || 0
     }
     console.log(`[crawler] API 入库 ${inserted} / 更新 ${updated}`)
     RUN_NEW += inserted
@@ -749,7 +753,11 @@ async function runCDP() {
       await sleep(2500)
     }
   }
-  if (!loginOk) return
+  if (!loginOk) {
+    console.error('[crawler] 连接后登录校验失败，退出采集。')
+    ALERTS.push('AUTH_REQUIRED：连接后检测到未登录态，请重新登录 Boss。')
+    throw new Error('AUTH_REQUIRED')
+  }
 
   if (MANUAL) {
     console.log('\n[crawler] 手动模式：在真实 Chrome 里自己翻到某个关键词的搜索结果页，准备好后按 Enter 收割当前页；输入 q 回车退出。')
