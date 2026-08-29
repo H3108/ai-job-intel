@@ -10,6 +10,7 @@
 
 import { createHash } from 'node:crypto'
 import { normalizeTitle } from './skill-normalize.js'
+import { isCoreFrontend } from './search-templates.js'
 
 function nowStamp() {
   // SQLite datetime('now') 格式：YYYY-MM-DD HH:MM:SS（本地时区）
@@ -36,11 +37,10 @@ function normalize(input, index) {
         ? input.extracted
         : JSON.stringify(input.extracted)
   }
-  // 宽匹配过滤：暂时关闭，先把数据抓回来
-  // TODO: 后面优化 isCoreFrontend 后再开启
-  // if (!isCoreFrontend(title)) {
-  //   return null  // 跳过不匹配的岗位
-  // }
+  // 宽匹配过滤：只保留前端+AI信号岗位
+  if (!isCoreFrontend(title)) {
+    return null  // 跳过不匹配的岗位
+  }
   return {
     id: input.id || genId({ title, company: input.company, location: input.location }),
     title,

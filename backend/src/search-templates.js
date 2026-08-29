@@ -97,11 +97,33 @@ export const BROAD_RULE = {
 // 前端岗位 + AI 强相关岗位都保留
 export function isCoreFrontend(title = '') {
   const t = title.toLowerCase()
-  // 前端相关
+
+  // 前端基础关键词
   const isFrontend = /前端|react|vue|angular|electron|web|小程序|node\.?js|next\.js/i.test(t)
-  // AI 强相关（与前端配合紧密）
-  const isAIRelated = /ai|agent|智能体|大模型|llm|算法|机器学习|深度学习|aigc/i.test(t)
-  return isFrontend || isAIRelated
+  if (!isFrontend) return false
+
+  // 排除非前端岗位（即使标题含"前端"关键词）
+  const excludePatterns = [
+    /测试/, /产品/, /设计/, /运营/, /后端/, /java(?!\s*前端)/i,
+    /python/i, /大数据/, /嵌入式/, /移动端/, /ios/i, /android/i,
+    /c\+\+/i, /c#/i, /\.net/i, /go\b/i, /golang/i, /rust/i,
+    /php/i, /ruby/i, /scala/i, /运维/, /devops/i, /sre/i,
+    /算法/, /机器学习/, /深度学习/, /nlp/i, /cv/i, /推荐系统/,
+    /数据标注/, /标注/i, /人工智{1,2}能(?!前端|方向|应用)/i,
+    /hr/, /招聘/, /猎头/, /行政/, /财务/, /客服/, /销售/, /商务/
+  ]
+  for (const re of excludePatterns) {
+    if (re.test(title)) return false
+  }
+
+  // 全栈/混合岗位特判：只有明确含前端框架才保留
+  const fullstackSignals = /全栈|fullstack|全端|混合开发|多端/.test(t)
+  const explicitFrontend = /react|vue|angular|next\.?js|nuxt|typescript|ts\b|webpack|vite|小程序/.test(t)
+  if (fullstackSignals && !explicitFrontend) return false
+
+  // AI 方向保留（前端+AI 复合岗）
+  const isAIRelated = /ai|agent|智能体|大模型|llm|aigc|ai方向|ai应用/.test(t)
+  return true
 }
 export function matchesBroad(title = '') {
   const t = title.toLowerCase()
