@@ -243,16 +243,8 @@ async function ensureLoginCDP(cdp) {
   const st = await cdp.evaluate(LOGIN_CHECK)
   const needLogin = st.hasLogin || /_security_check|zhipin\.com\/web\/geek\/login/.test(st.url)
   if (!needLogin) return true
-  console.log('[crawler] 检测到未登录。请在真实 Chrome 里登录 Boss（扫码/手机号），登录后回到本终端按 Enter。')
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  await new Promise((res) => rl.question('[crawler] 登录完成后按 Enter 继续：', () => res()))
-  rl.close()
-  const st2 = await cdp.evaluate(LOGIN_CHECK)
-  if (st2.hasLogin || /_security_check|zhipin\.com\/web\/geek\/login/.test(st2.url)) {
-    console.warn('[crawler] 仍未登录，退出。')
-    return false
-  }
-  return true
+  console.warn('[crawler] 检测到未登录，返回 AUTH_REQUIRED。')
+  return 'AUTH_REQUIRED'
 }
 
 async function waitCardsCDP(cdp, timeoutMs = 30000) {
