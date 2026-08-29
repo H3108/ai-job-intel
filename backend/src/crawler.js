@@ -669,6 +669,7 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
   // 滚动触发懒加载（Boss 用虚拟滚动，首屏只有部分卡片在 DOM 中）
   await scrollToLoadCDP(cdp)
   const res = await scrapeViaCDP(cdp)
+  console.log(`[crawler] scrapeViaCDP 返回:`, JSON.stringify(res).slice(0, 200))
   console.log(`[crawler] 解析到 ${res.count} 张卡片${keyword ? `（关键词「${keyword}」）` : ''}`)
   if (res.count === 0) {
     const snippet = await cdp.evaluate(`(() => document.body ? document.body.innerHTML.slice(0, 1500) : '')()`)
