@@ -131,19 +131,9 @@ app.get('/api/health', (_req, res) => {
   try {
     const total = db.prepare('SELECT COUNT(*) AS n FROM jobs').get().n
     const salaryDecoded = db
-      .prepare("SELECT COUNT(*) AS n FROM jobs WHERE salary IS NOT NULL AND salary <> '' AND salary_confidence IS NOT NULL")
+      .prepare("SELECT COUNT(*) AS n FROM jobs WHERE salary IS NOT NULL AND salary <> ''")
       .get().n
     const salaryRate = total ? Math.round((salaryDecoded / total) * 100) : 0
-    // 黄区(<0.85)：字形比对打分器的正常输出区间（0.80–0.84 多为正确解码），仅作分布展示，不触发 warn。
-    const salaryLowConf = db
-      .prepare(`SELECT COUNT(*) AS n FROM jobs WHERE salary_confidence IS NOT NULL AND salary_confidence < ${SALARY_CONF_YELLOW}`)
-      .get().n
-    const salaryLowConfRate = salaryDecoded ? Math.round((salaryLowConf / salaryDecoded) * 100) : 0
-    // 红区(<0.70)：真正的解码风险区（字形匹配失败 / 字体被 Boss 更换）。健康灯以此为准。
-    const salaryLowConfRed = db
-      .prepare(`SELECT COUNT(*) AS n FROM jobs WHERE salary_confidence IS NOT NULL AND salary_confidence < ${SALARY_CONF_RED}`)
-      .get().n
-    const salaryLowConfRedRate = salaryDecoded ? Math.round((salaryLowConfRed / salaryDecoded) * 100) : 0
     const lastRun = db.prepare('SELECT * FROM crawl_runs ORDER BY id DESC LIMIT 1').get() || null
     // 健康灯由“实时数据”决定，不再被上次采集的任何告警(lastRun.status)强制覆盖：
     // 上次采集告警仅是运营日志，通过 lastRun 字段返回（Dashboard 仍展示“本次告警 N 条”），不再点亮红灯。
