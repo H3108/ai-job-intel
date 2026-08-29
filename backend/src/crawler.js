@@ -247,13 +247,16 @@ async function ensureLoginCDP(cdp) {
   return 'AUTH_REQUIRED'
 }
 
-async function waitCardsCDP(cdp, timeoutMs = 30000) {
+async function waitCardsCDP(cdp, timeoutMs = 60000) {
   const start = Date.now()
   // 第一阶段：等 SPA 加载骨架消失（"加载中"转圈不再可见）
   while (Date.now() - start < timeoutMs) {
     const loading = await cdp.evaluate(`(() => {
       const el = document.querySelector('.page-loading, .data-tips, [class*="loading"]');
-      return el ? el.offsetParent !== null : false;
+      if (!el) return false;
+      const text = (el.textContent || '').trim();
+      if (/加载中|loading/i.test(text)) return true;
+      return el.offsetParent !== null;
     })()`)
     if (!loading) break
     await sleep(800)
