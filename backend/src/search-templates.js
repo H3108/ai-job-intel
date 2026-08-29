@@ -7,39 +7,11 @@
 // 来源：Boss 网页版切换城市时 URL 上的 city 参数（与天气网城市码同源，稳定）。
 // 覆盖常用一线/新一线 + migrate.js 已识别的二线城市，便于「多城市采集」开箱即用。
 export const CITIES = {
-  // ── 一线 + 强二线（原 12 城，已验证码） ──
+  // 聚焦 4 城：深圳 > 广州 > 惠州 > 东莞
   深圳: '101280600',
-  北京: '101010100',
-  上海: '101020100',
   广州: '101280100',
   惠州: '101280300',
-  东莞: '101281600',
-  杭州: '101210100',
-  成都: '101270100',
-  武汉: '101200100',
-  南京: '101190100',
-  西安: '101110100',
-  苏州: '101190400',
-  // ── 其他新一线 / 二线（migrate.js 已识别集，补全 Boss 码） ──
-  重庆: '101040100',
-  天津: '101030100',
-  长沙: '101250100',
-  宁波: '101210400',
-  佛山: '101280800',
-  合肥: '101220100',
-  青岛: '101120200',
-  无锡: '101190200',
-  珠海: '101280700',
-  厦门: '101230200',
-  郑州: '101180101',
-  福州: '101230101',
-  济南: '101120101',
-  沈阳: '101070101',
-  大连: '101070201',
-  昆明: '101290101',
-  哈尔滨: '101050101',
-  南昌: '101240101',
-  南宁: '101300101'
+  东莞: '101281600'
 }
 
 export const DEFAULT_CITY = '深圳'
@@ -50,18 +22,18 @@ export const DEFAULT_CITY = '深圳'
 // 注：原 "FDE" 角色已撤下 —— Boss 搜 "FDE" 实际返回现场部署/硬件测试工程师，
 //     并非前端开发工程师。前端岗族改用 "前端/前端开发/前端工程师" 关键词覆盖（含 AI 前端）。
 export const ROLE_TEMPLATES = {
-  'AI Agent 前端': {
-    keywords: ['前端', '前端开发', '前端工程师', 'AI Agent前端', 'AI前端', '大模型前端', 'LLM前端', 'AIGC前端', '智能体前端']
+  '前端工程师': {
+    keywords: ['前端', '前端开发', '前端工程师', 'AI Agent前端', 'AI前端', '大模型前端', 'LLM前端', 'AIGC前端', '智能体前端', 'React前端', 'Vue前端', 'Next.js开发']
   },
-  'AI 产品经理': {
-    keywords: ['AI产品经理', 'AI PM', '大模型产品', '生成式AI产品', 'AI产品设计']
-  },
-  'AI 算法工程师': {
+  '算法工程师': {
     keywords: ['大模型算法', 'LLM算法工程师', '深度学习算法', 'AI算法工程师', '机器学习算法']
+  },
+  '产品经理': {
+    keywords: ['AI产品经理', 'AI PM', '大模型产品', '生成式AI产品', 'AI产品设计']
   }
 }
 
-export const DEFAULT_ROLE = 'AI Agent 前端'
+export const DEFAULT_ROLE = '前端工程师'
 
 // 兼容旧导出（供仍引用 EXACT_KEYWORDS / CITY 的代码，避免破坏）。
 export const EXACT_KEYWORDS = ROLE_TEMPLATES[DEFAULT_ROLE].keywords
@@ -119,7 +91,7 @@ export function allSearchUrls() {
 // 宽匹配判定（§6 宽匹配，兜底用）：title 含「前端」且含任一 AI 信号词。
 export const BROAD_RULE = {
   mustInclude: ['前端'],
-  anyOf: ['AI', '大模型', 'LLM', 'Agent', '智能体', 'AIGC']
+  anyOf: ['AI', '大模型', 'LLM', 'Agent', '智能体', 'AIGC', 'React', 'Vue', 'Next.js']
 }
 export function matchesBroad(title = '') {
   const t = title.toLowerCase()
