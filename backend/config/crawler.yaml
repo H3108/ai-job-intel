@@ -7,16 +7,16 @@ version: '2026-08-29'
 cities:
   深圳:
     code: '101280600'
-    pages: 5       # P0 城市，多采几页
+    pages: 8       # P0 城市，多采几页
   广州:
     code: '101280100'
-    pages: 3
+    pages: 6
   惠州:
     code: '101280300'
-    pages: 1
+    pages: 5
   东莞:
     code: '101281600'
-    pages: 1
+    pages: 5
 
 defaultCity: '深圳'
 
@@ -49,7 +49,7 @@ roles:
       - '生成式AI产品'
       - 'AI产品设计'
 
-defaultRole: '前端工程师'
+defaultRole: 'AI Agent 前端'
 
 # ── 采集行为 ──
 crawl:

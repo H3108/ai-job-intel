@@ -309,8 +309,9 @@ async function scrollToLoadCDP(cdp, maxScrollRounds = 8) {
   }
 }
 
-async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, page = 1) {
-  // API-first 采集：绕过 DOM，直接用 Boss 搜索 API
+async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, page = 1, searchCityName = selectedCity.name) {
+  try {
+    // API-first 采集：绕过 DOM，直接用 Boss 搜索 API
   // 从 cookie 中提取可用 token，按优先级尝试
   const cookiesExpr = "(() => { const cookies = document.cookie.split(';').reduce((a, b) => { const [k, v] = b.trim().split('='); a[k] = v; return a; }, {}); return { wt2: cookies['wt2'] || '', zpAt: cookies['zp_at'] || '', bst: cookies['bst'] || '', stoken: cookies['__zp_stoken__'] || '', token: cookies['token'] || '' }; })()"
   const cookies = await cdp.evaluate(cookiesExpr)
@@ -326,9 +327,22 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
   const query = encodeURIComponent(keyword || '')
   const body = `page=${page}&pageSize=20&city=${city}&query=${query}&scene=1&expectInfo=&multiSubway=&multiBusinessDistrict=&position=&jobType=&salary=&experience=&degree=&industry=&scale=&stage=`
   const xhrExpr = "(() => { return new Promise((resolve) => { const xhr = new XMLHttpRequest(); xhr.open('POST', '/wapi/zpgeek/search/joblist.json', false); xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Referer', location.href); xhr.setRequestHeader('Origin', 'https://www.zhipin.com'); xhr.setRequestHeader('zp_token', '" + token + "'); xhr.setRequestHeader('token', '" + token + "'); xhr.onload = () => { try { const d = JSON.parse(xhr.responseText); resolve({ ok: d.code === 0, data: d.zpData || {}, raw: xhr.responseText }); } catch(e) { resolve({ ok: false, error: e.message }); } }; xhr.onerror = () => resolve({ ok: false, error: 'xhr network error' }); xhr.send('" + body + "'); }); })()"
-  const apiResult = await cdp.evaluate(xhrExpr)
-  if (!apiResult.ok) {
-    console.warn('[api] 请求失败:', apiResult.error || apiResult.data.message)
+  let apiResult
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      apiResult = await cdp.evaluate(xhrExpr)
+      if (apiResult.ok) break
+    } catch (e) {
+      if (attempt < 3 && /navigated or closed|Execution context|context.*destroyed|Target closed|Connection closed|detached/i.test(e.message || '')) {
+        console.warn(`[api] 第 ${attempt} 次 API 调用失败（${e.message}），等待后重试...`)
+        await sleep(2000)
+        continue
+      }
+      throw e
+    }
+  }
+  if (!apiResult || !apiResult.ok) {
+    console.warn('[api] 请求失败:', apiResult?.error || apiResult?.data?.message || '未知错误')
     return { count: 0, data: [], viaApi: false }
   }
   const zpData = apiResult.data
@@ -366,12 +380,18 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
     role_language: ''
   }))
   return { count: mapped.length, data: mapped, viaApi: true }
+  } catch (e) {
+    console.error('[crawler][crawlViaApiCDP] 内部异常：', e?.message || e)
+    console.error('[crawler][crawlViaApiCDP] stack：', e?.stack)
+    throw e
+  }
 }
 
 // 分页采集：自动翻页直到无数据或达到城市页数限制
 async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, searchCityName = selectedCity.name) {
-  const city = searchCityName || selectedCity?.name || '深圳'
-  const maxPages = CITY_PAGE_LIMITS[city] || 1
+  try {
+    const city = searchCityName || selectedCity?.name || '深圳'
+    const maxPages = CITY_PAGE_LIMITS[city] || 1
   console.log(`[api][debug] crawlViaApiCDPAllPages: city=${city}, maxPages=${maxPages}, keyword=${keyword}`)
   let allData = []
   let page = 1
@@ -379,8 +399,21 @@ async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRole
   
   while (page <= maxPages) {
     console.log(`[api] ${city} "${keyword}" 第 ${page}/${maxPages} 页`)
-    const result = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName, page)
-    if (!result.viaApi || result.count === 0) {
+    let result
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        result = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName, page, searchCityName)
+        break
+      } catch (e) {
+        if (attempt < 3 && /navigated or closed|Execution context|context.*destroyed|Target closed|Connection closed|detached/i.test(e.message || '')) {
+          console.warn(`[api] 第 ${page} 页第 ${attempt} 次尝试失败（${e.message}），等待后重试...`)
+          await sleep(2000)
+        } else {
+          throw e
+        }
+      }
+    }
+    if (!result || !result.viaApi || result.count === 0) {
       console.log(`[api] ${city} "${keyword}" 第 ${page} 页无数据，停止翻页`)
       break
     }
@@ -399,6 +432,11 @@ async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRole
   
   console.log(`[api] ${city} "${keyword}" 分页完成：共 ${allData.length} 条（${page-1} 页）`)
   return { count: allData.length, data: allData, viaApi: true }
+  } catch (e) {
+    console.error('[crawler][crawlViaApiCDPAllPages] 内部异常：', e?.message || e)
+    console.error('[crawler][crawlViaApiCDPAllPages] stack：', e?.stack)
+    throw e
+  }
 }
 
 async function scrapeViaCDP(cdp) {
