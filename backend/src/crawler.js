@@ -307,7 +307,7 @@ async function scrollToLoadCDP(cdp, maxScrollRounds = 8) {
   }
 }
 
-async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name) {
+async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, page = 1) {
   // API-first 采集：绕过 DOM，直接用 Boss 搜索 API
   // 从 cookie 中提取可用 token，按优先级尝试
   const cookiesExpr = "(() => { const cookies = document.cookie.split(';').reduce((a, b) => { const [k, v] = b.trim().split('='); a[k] = v; return a; }, {}); return { wt2: cookies['wt2'] || '', zpAt: cookies['zp_at'] || '', bst: cookies['bst'] || '', stoken: cookies['__zp_stoken__'] || '', token: cookies['token'] || '' }; })()"
@@ -322,7 +322,7 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
   console.log('[api] 使用 token 类型:', token === cookies.wt2 ? 'wt2' : token === cookies.zpAt ? 'zp_at' : token === cookies.bst ? 'bst' : token === cookies.token ? 'token' : 'stoken')
   const city = selectedCity ? selectedCity.code : '101280600'
   const query = encodeURIComponent(keyword || '')
-  const body = `page=1&pageSize=20&city=${city}&query=${query}&scene=1&expectInfo=&multiSubway=&multiBusinessDistrict=&position=&jobType=&salary=&experience=&degree=&industry=&scale=&stage=`
+  const body = `page=${page}&pageSize=20&city=${city}&query=${query}&scene=1&expectInfo=&multiSubway=&multiBusinessDistrict=&position=&jobType=&salary=&experience=&degree=&industry=&scale=&stage=`
   const xhrExpr = "(() => { return new Promise((resolve) => { const xhr = new XMLHttpRequest(); xhr.open('POST', '/wapi/zpgeek/search/joblist.json', false); xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Referer', location.href); xhr.setRequestHeader('Origin', 'https://www.zhipin.com'); xhr.setRequestHeader('zp_token', '" + token + "'); xhr.setRequestHeader('token', '" + token + "'); xhr.onload = () => { try { const d = JSON.parse(xhr.responseText); resolve({ ok: d.code === 0, data: d.zpData || {}, raw: xhr.responseText }); } catch(e) { resolve({ ok: false, error: e.message }); } }; xhr.onerror = () => resolve({ ok: false, error: 'xhr network error' }); xhr.send('" + body + "'); }); })()"
   const apiResult = await cdp.evaluate(xhrExpr)
   if (!apiResult.ok) {
@@ -376,7 +376,7 @@ async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRole
   
   while (page <= maxPages) {
     console.log(`[api] ${city} "${keyword}" 第 ${page}/${maxPages} 页`)
-    const result = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName)
+    const result = await crawlViaApiCDP(cdp, keyword, navUrl, searchRoleName, page)
     if (!result.viaApi || result.count === 0) {
       console.log(`[api] ${city} "${keyword}" 第 ${page} 页无数据，停止翻页`)
       break
@@ -564,8 +564,8 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
         experience: c.experience || '',
         education: c.education || ''
       }])
-      inserted += r.inserted
-      updated += r.updated
+      inserted += r.action === "inserted" ? 1 : 0
+      updated += r.action === "updated" ? 1 : 0
     }
     console.log(`[crawler] API 入库 ${inserted} / 更新 ${updated}`)
     RUN_NEW += inserted
@@ -613,8 +613,8 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
         salary_raw: salaryRaw,
       }
     ])
-    inserted += r.inserted
-    updated += r.updated
+    inserted += r.action === "inserted" ? 1 : 0
+    updated += r.action === "updated" ? 1 : 0
     await sleep(1500) // 详情页之间的轻量限速（真实 Chrome，别太狠）
   }
   console.log(`[crawler] 入库 ${inserted} / 更新 ${updated}`)
@@ -895,8 +895,8 @@ async function harvestCurrentPage(page, searchRoleName = selectedRole.name, sear
     }
     const raw = await scrapeDetail(page, c.detailHref)
     const r = importJobs(db, [{ title: c.title, company: c.company, raw, location: searchCityName, role: searchRoleName, search_role: searchRoleName, status: 'collected' }])
-    inserted += r.inserted
-    updated += r.updated
+    inserted += r.action === "inserted" ? 1 : 0
+    updated += r.action === "updated" ? 1 : 0
     await limiter.wait()
   }
   console.log(`[crawler] 入库 ${inserted} / 更新 ${updated}`)
