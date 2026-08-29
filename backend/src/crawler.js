@@ -387,9 +387,9 @@ async function crawlViaApiCDPAllPages(cdp, keyword = '', navUrl = '', searchRole
     allData = allData.concat(result.data)
     page++
     
-    // 如果返回条数少于 pageSize，说明已到最后一页
-    if (result.count < pageSize) {
-      console.log(`[api] ${city} "${keyword}" 第 ${page-1} 页条数不足 ${pageSize}，停止翻页`)
+    // 如果返回 0 条，说明已到最后一页
+    if (result.count === 0) {
+      console.log(`[api] ${city} "${keyword}" 第 ${page-1} 页无数据，停止翻页`)
       break
     }
     
