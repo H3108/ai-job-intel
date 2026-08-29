@@ -27,7 +27,7 @@ import { RateLimiter } from './rate-limiter.js'
 import { buildSearchUrl, buildSearchUrls, resolveRole, resolveCity } from './search-templates.js'
 import { ensureSalaryColumns } from './importer.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope } from './migrate.js'
-import { prepareDecoder, findReferenceFonts } from './font-decrypt.js'
+// font-decrypt 已移除，API 直接返回明文字段
 import { loadDotEnv } from './analyze.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -91,33 +91,17 @@ console.log(`[crawler] 采集矩阵 → ${TARGETS.length} 个搜索（${_matrixR
 
 // 合法薪资形态判定（模块级，buildPageDecoder 与 harvestCDP 共用）：
 // 含真实数字 + 含单位(K/万/元) + 无残留 PUA（解密失败）。
-function looksLikeSalary(s) {
-  if (!s) return false
-  if (/[\uE000-\uF8FF]/.test(s)) return false // 残留 PUA 私有区 → 解密失败
-  if (!/\d/.test(s)) return false // 必须含真实数字
-  if (!/[Kk万¥元￥]/.test(s)) return false // 必须含单位
-  return true
-}
+// API 直接返回明文字段，无需 looksLikeSalary 判断
 
-// 薪资解密置信度阈值（Salary 校验 SOP，见 docs/Salary_Validation_SOP.md）：
-//   < RED(0.7)     → 红：低置信，需重跑 --font-dump / --font-test 复核
-//   < YELLOW(0.85) → 黄：可置信但建议抽检（近似字形 6/8、7/8 风险区）
-//   ≥ YELLOW       → 绿：轮廓法高可信
-// 数据依据：真实库置信度分布 0.77–0.9，原路线图 <0.6 在当前数据下恒为 0（失效），故据实上调。
-const SALARY_CONF_RED = 0.7
-const SALARY_CONF_YELLOW = 0.85
-const SALARY_LOWCNF_WARN_RATE = 0.1 // 低置信占比超 10% 即告警（对齐 Phase4 健康指标）
+// API 直接返回 salaryDesc 明文字段，无需解密，移除 SALARY_CONF 相关逻辑
 
 // 单次运行累计计数器（供收尾写 crawl_runs，驱动看板状态灯）
 let RUN_NEW = 0
 let RUN_UPDATED = 0
-let RUN_SALARY_DECODED = 0
-let RUN_SALARY_ATTEMPTED = 0
-let RUN_SALARY_LOWCONF = 0
 function resetRunCounters() {
-  RUN_NEW = RUN_UPDATED = RUN_SALARY_DECODED = RUN_SALARY_ATTEMPTED = RUN_SALARY_LOWCONF = 0
+  RUN_NEW = RUN_UPDATED = 0
 }
-const DUMP_FONT = process.argv.includes('--font-dump') // 把命中的加密字体+样本存盘，供离线 --font-test 验证
+// font-dump 已移除，API 直接返回明文字段
 let fontDumpSeq = 0 // 字体落盘全局序号，避免跨关键词互相覆盖
 const USE_CDP = !USE_LAUNCH // 默认走 CDP（真实 Chrome）
 
@@ -339,6 +323,7 @@ async function crawlViaApiCDP(cdp, keyword = '', navUrl = '', searchRoleName = s
     company: job.brandName || job.bossName || '',
     location: job.cityName || selectedCity.name,
     salary: job.salaryDesc || '',
+    salary_raw: job.salaryDesc || '',  // API 返回明文，不再加密
     experience: job.jobExperience || '',
     education: job.jobDegree || '',
     raw: '',
@@ -396,16 +381,13 @@ async function scrapeViaCDP(cdp) {
         return t && !/查看全部|查看更多|查看职位/.test(t)
       })
       const company = companyLink ? companyLink.textContent.trim() : '';
-      // 薪资在卡片上、用加密字体渲染：取 .salary（或含 salary 类）元素的文本，得到的是 PUA 码点（待解密）
-      const salaryEl = card ? card.querySelector('span.salary, [class*="salary"]') : null;
-      const salaryEnc = salaryEl ? (salaryEl.textContent || '').trim() : '';
+      // 薪资由 API 返回明文，DOM scraper 不再提取加密文本
       if (seen.has(href)) { console.log('[scrape] 跳过重复 href'); continue; }
       seen.add(href);
       cards.push({
         title,
         company,
         detailHref: href.startsWith('http') ? href : 'https://www.zhipin.com' + href,
-        salaryEnc
       });
     }
     console.log('[scrape] 最终返回 ' + cards.length + ' 张卡片'); return { count: cards.length, data: cards, url: location.href };
@@ -443,7 +425,7 @@ async function scrapeDetailCDP(cdp, detailHref) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 薪资字体解密（§9.x）：页面 CSS/内联样式里找 kanzhun 加密字体 → 下载 → 解析 PUA→数字 映射
+// 薪资字段已由 API 直接返回明文（salaryDesc），无需字体解密
 // ─────────────────────────────────────────────────────────────────────────────
 // 离线薪资字体兜底：当活体页未捕获到可用薪资字体(buildPageDecoder 返回 null)时，
 // 复用 --font-dump 已落盘的 data/boss_fonts 字体重新解码。经验证该批字体对全部页面薪资通用
@@ -455,7 +437,7 @@ function loadOfflineDecoders() {
   _offlineDecoders = []
   const dir = join(dataDir, 'boss_fonts')
   if (!existsSync(dir)) return _offlineDecoders
-  const refs = findReferenceFonts()
+  // findReferenceFonts 已移除，API 直接返回明文字段
   let manifest = { fonts: [] }
   try { manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf-8')) } catch {}
   const confByFile = {}
@@ -468,7 +450,7 @@ function loadOfflineDecoders() {
     if (!fn.endsWith('.bin')) continue
     try {
       const buf = readFileSync(join(dir, fn))
-      const dec = prepareDecoder(buf, refs)
+      continue  // 薪资解密已移除
       if (dec.mapSize === 0) continue
       ranked.push({ fn, dec, conf: confByFile[fn] ?? -1 })
     } catch {}
@@ -480,34 +462,6 @@ function loadOfflineDecoders() {
 
 // 二次兜底：本地 .bin 字体在当前环境全部失败时，按 manifest 中的 URL 在线下载后重试。
 // 绕过本地字体解析差异/字体文件损坏，优先返回置信最高的合法薪资形态解码。
-async function loadRemoteFallbackDecoders(encryptedSample, refs) {
-  const dir = join(dataDir, 'boss_fonts')
-  let manifest = { fonts: [] }
-  try { manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf-8')) } catch {}
-  const urls = [...new Set((manifest.fonts || []).map(f => f.url).filter(Boolean))]
-  const out = []
-  const looksLikeSalary = (s) => {
-    if (!s) return false
-    if (/[\uE000-\uF8FF]/.test(s)) return false
-    if (!/\d/.test(s)) return false
-    if (!/[Kk万¥元￥]/.test(s)) return false
-    return true
-  }
-  for (const url of urls) {
-    try {
-      const buf = Buffer.from(await (await fetch(url, { headers: { Referer: 'https://www.zhipin.com/', 'User-Agent': UA, Accept: '*/*' } })).arrayBuffer())
-      const dec = prepareDecoder(buf, refs)
-      if (dec.mapSize === 0) continue
-      const decoded = encryptedSample ? dec.decode(encryptedSample) : ''
-      const conf = encryptedSample ? dec.decodeConfidence(encryptedSample) : null
-      if (encryptedSample && !looksLikeSalary(decoded)) continue
-      out.push({ fn: `remote:${url.split('/').pop()}`, dec, conf: conf ?? -1, decoded })
-    } catch {}
-  }
-  out.sort((a, b) => b.conf - a.conf)
-  return out
-}
-
 async function getSalaryFontCandidates(cdp) {
   // 返回两类候选：'CSS:<href>'（外部样式表，Node 侧 fetch 后正则提字体）、'INLINE:<style文本>'
   return cdp.evaluate(`(() => {
@@ -522,188 +476,7 @@ async function getSalaryFontCandidates(cdp) {
 // 关键：不再"抓到第一个有 PUA 映射的字体就返回"（会误抓图标字体 ui-icons），
 // 而是按 .salary 真实 font-family 优先匹配 @font-face，并对每个候选尝试解码样本，
 // 选"解码出合法薪资形态（数字+K/万）"的那个。
-async function buildPageDecoder(cdp, encryptedSample = '', keyword = '') {
-  try {
-  // 合法薪资形态判定：含真实数字 + 含单位(K/万/元) + 无残留 PUA（解密失败）。
-  // 支持日薪「元/天」、月薪「元/月」、周薪「K」、年薪「万」等 Boss 全部形态。
-  const looksLikeSalary = (s) => {
-    if (!s) return false
-    if (/[\uE000-\uF8FF]/.test(s)) return false // 残留 PUA 私有区 → 解密失败
-    if (!/\d/.test(s)) return false // 必须含真实数字
-    if (!/[Kk万¥元￥]/.test(s)) return false // 必须含单位
-    return true
-  }
-  // 薪资元素真实使用的 font-family（用于优先匹配正确字体）
-    const salaryFontFamily = await cdp.evaluate(
-      `(() => { const el = document.querySelector('.salary'); return el ? getComputedStyle(el).fontFamily : ''; })()`
-    )
-    // 收集外链 CSS（抓取后解析）+ 内联 <style>
-    const cands = await getSalaryFontCandidates(cdp)
-    const cssTexts = []
-    const fallbackUrls = new Set()
-    for (const c of cands) {
-      if (c.startsWith('CSS:')) {
-        try {
-          const css = await (await fetch(c.slice(4))).text()
-          cssTexts.push(css)
-          const re = /url\(\s*['"]?([^'")]+\.(?:woff2?|ttf))['"]?\s*\)/gi
-          let m
-          while ((m = re.exec(css))) {
-            try { fallbackUrls.add(new URL(m[1], c.slice(4)).href) } catch {}
-          }
-        } catch {}
-      } else if (c.startsWith('INLINE:')) {
-        cssTexts.push(c.slice(7))
-      }
-    }
-    // 解析 @font-face：family -> [urls]（含 data: 内联 base64 字体）
-    const faceSet = new Map()
-    const grabFace = (css) => {
-      const re = /@font-face\s*\{([\s\S]*?)\}/g
-      let m
-      while ((m = re.exec(css))) {
-        const body = m[1]
-        const fam = (body.match(/font-family:\s*([^;]+)/) || [])[1]
-        const src = (body.match(/src:\s*([^;]+)/) || [])[1] || ''
-        const urls = [...src.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)].map((x) => x[1])
-        if (fam) {
-          const key = fam.trim().replace(/^['"]|['"]$/g, '')
-          const list = faceSet.get(key) || []
-          for (const u of urls) list.push(u)
-          faceSet.set(key, list)
-        }
-      }
-    }
-    for (const css of cssTexts) grabFace(css)
-    const salaryFam = (salaryFontFamily || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '').toLowerCase()
-    const isSalaryFace = (fam) => salaryFam && (fam || '').toLowerCase().includes(salaryFam)
-    // 候选排序：薪资元素字体优先(pri0) > 其他 @font-face(pri1) > 兜底 url(pri2)
-    const ordered = []
-    for (const [fam, urls] of faceSet) {
-      const pri = isSalaryFace(fam) ? 0 : 1
-      for (const u of urls) ordered.push({ pri, fam, url: u })
-    }
-    for (const u of fallbackUrls) ordered.push({ pri: 2, fam: '', url: u })
-    ordered.sort((a, b) => a.pri - b.pri)
-    console.log(`[salary] 薪资元素 font-family=${salaryFontFamily || '(无)'}；候选字体 ${ordered.length} 个`)
-    if (ordered.length === 0) {
-      console.warn('[salary] 未在页面字体中找到 PUA 映射，薪资留空（如需排查可加 --font-dump）')
-      return null
-    }
-    const fetchBuf = async (url) => {
-      if (url.startsWith('data:')) {
-        const b64 = url.slice(url.indexOf('base64,') + 7)
-        return Buffer.from(b64, 'base64')
-      }
-      // 优先用 CDP 捕获的浏览器已下载字体（最权威，绕开 Referer 限制）
-      if (capturedFonts.has(url)) return capturedFonts.get(url)
-      const base = url.split('?')[0].split('/').pop() // @font-face URL 与实际网络 URL 可能仅 query 不同
-      for (const [u, buf] of capturedFonts) {
-        if (u.split('?')[0].split('/').pop() === base) return buf
-      }
-      // 兜底：Node 重新下载（带 Referer，static.zhipin.com 需同源 Referer 才放行）
-      try {
-        return Buffer.from(
-          await (await fetch(url, { headers: { Referer: 'https://www.zhipin.com/', 'User-Agent': UA, Accept: '*/*' } })).arrayBuffer()
-        )
-      } catch (e) {
-        throw new Error(`下载失败 ${url}: ${e.message}`)
-      }
-    }
-    let chosen = null
-    const dumped = []
-    let lastErr = ''
-    for (const { fam, url } of ordered) {
-      try {
-        const buf = await fetchBuf(url)
-        const dec = prepareDecoder(buf)
-        if (dec.mapSize === 0) { lastErr = `字体 ${fam || url} 无 PUA 映射`; continue }
-        const decoded = encryptedSample ? dec.decode(encryptedSample) : ''
-        const ok = looksLikeSalary(decoded)
-        const conf = encryptedSample ? dec.decodeConfidence(encryptedSample) : null
-        console.log(
-          `[salary] 候选 font=${fam || '(未知)'} 方法=${dec.method} 映射数=${dec.mapSize} decode=${decoded ? JSON.stringify(decoded) : '(无样本)'} 置信=${conf == null ? '-' : conf.toFixed(2)} ${ok ? '✓命中' : ''}`
-        )
-        if (DUMP_FONT) {
-          const dir = join(dataDir, 'boss_fonts')
-          mkdirSync(dir, { recursive: true })
-          const slug = (keyword || 'page').replace(/[^A-Za-z0-9一-鿿-]/g, '_').slice(0, 24)
-          const fn = join(dir, `font_${String(fontDumpSeq++).padStart(3, '0')}_${slug}.bin`)
-          writeFileSync(fn, buf)
-          dumped.push({ file: fn, family: fam, url, method: dec.method, mapSize: dec.mapSize, decodedSample: decoded, confidence: conf })
-        }
-        if (!chosen && (ok || !encryptedSample)) { chosen = dec; chosen.lastConfidence = conf }
-        if (ok) { chosen = dec; chosen.lastConfidence = conf; break }
-      } catch (e) {
-        lastErr = `字体 ${fam || url} 获取失败：${e.message}`
-        if (DUMP_FONT) console.warn(`[salary] 候选字体获取失败：${fam || '(未知)'} ${url} -> ${e.message}`)
-      }
-    }
-    if (DUMP_FONT && dumped.length) {
-      // manifest 跨关键词累积，避免后一个关键词覆盖前一个的落盘记录
-      const mPath = join(dataDir, 'boss_fonts', 'manifest.json')
-      let all = []
-      if (existsSync(mPath)) {
-        try {
-          all = JSON.parse(readFileSync(mPath, 'utf-8')).fonts || []
-        } catch {}
-      }
-      all = all.concat(dumped)
-      writeFileSync(mPath, JSON.stringify({ salaryFontFamily, chosenMethod: chosen ? chosen.method : null, fonts: all }, null, 2))
-      writeFileSync(
-        join(dataDir, 'salary_sample.json'),
-        JSON.stringify(
-          { salaryFontFamily, method: chosen ? chosen.method : null, encryptedSample, decodedSample: chosen && encryptedSample ? chosen.decode(encryptedSample) : '' },
-          null,
-          2
-        )
-      )
-      console.log(`[salary] 已落盘 ${dumped.length} 个字体到 data/boss_fonts/（manifest 累计 ${all.length} 个）+ salary_sample.json（可离线 node src/analyze.js --font-test 校验）`)
-    }
-    if (!chosen) {
-      // 本地离线字体兜底
-      const offs = loadOfflineDecoders()
-      let bestOff = null
-      for (const { fn, dec } of offs) {
-        if (encryptedSample) {
-          const decoded = dec.decode(encryptedSample)
-          const conf = dec.decodeConfidence(encryptedSample)
-          if (looksLikeSalary(decoded) && (conf == null || conf >= SALARY_CONF_RED)) {
-            if (!bestOff || (conf ?? -1) > (bestOff.lastConfidence ?? -1)) bestOff = { dec, lastConfidence: conf, decoded }
-          }
-        } else {
-          if (!bestOff) bestOff = { dec, lastConfidence: null, decoded: '' }
-          break
-        }
-      }
-      if (bestOff) {
-        chosen = bestOff.dec
-        chosen.lastConfidence = bestOff.lastConfidence
-        console.log(`[salary] 离线字体兜底命中置信最高：${bestOff.decoded}（置信 ${bestOff.lastConfidence == null ? '-' : bestOff.lastConfidence.toFixed(2)}）`)
-      }
-    }
-    if (!chosen) {
-      // 在线字体二次兜底：本地 .bin 均失败时，按 manifest URL 下载原始字体重试。
-      // 该 fallback 必须在 buildPageDecoder 的 try 块内，可访问 encryptedSample / looksLikeSalary。
-      const refs = findReferenceFonts()
-      const remotes = await loadRemoteFallbackDecoders(encryptedSample, refs)
-      if (remotes.length) {
-        chosen = remotes[0].dec
-        chosen.lastConfidence = remotes[0].conf
-        console.log(`[salary] 在线字体兜底命中：${remotes[0].decoded}（置信 ${remotes[0].conf == null ? '-' : remotes[0].conf.toFixed(2)}）`)
-      }
-    }
-    if (!chosen) {
-      console.warn('[salary] 候选字体均未解出合法薪资形态，薪资留空' + (lastErr ? `（最后错误：${lastErr}）` : '') + (DUMP_FONT ? '；已落盘供排查' : '（如需排查可加 --font-dump）'))
-      return null
-    }
-    return chosen
-  } catch (e) {
-    console.warn('[salary] 解密准备失败：' + e.message)
-    return null
-  }
-}
-
+// 薪资解密已迁移到 API-first 采集，直接使用明文字段
 async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selectedRole.name, searchCityName = selectedCity.name) {
   const st = await cdp.evaluate(`(() => ({ url: location.href }))()`)
   if (/_security_check|zhipin\.com\/web\/geek\/login/.test(st.url)) {
@@ -765,10 +538,6 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
     console.log('[crawler][harvest] 出口：0 卡片')
     return
   }
-  // 本页建一次解码器（字体通常整页共用），首个带薪资的卡片作为离线落盘样本
-  const firstEnc = res.data.find((c) => c.salaryEnc)?.salaryEnc || ''
-  const decoder = await buildPageDecoder(cdp, firstEnc, keyword)
-  let sampleLogged = false
   let inserted = 0
   let updated = 0
   const { importJobs } = await import('./importer.js')
@@ -781,31 +550,9 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
       console.warn(`[crawler] ⚠ 潜在单行污染 title=${JSON.stringify(c.title)}（company=${JSON.stringify(c.company)}），请反馈样本以定切分规则`)
     }
     const raw = await scrapeDetailCDP(cdp, c.detailHref)
-    // raw 取详情页 JD 文本；抓不到时退化为详情链接（保证入库非空，后续可再补全）
-    let salary = null
-    // 根因修复：无论当页解码器是否成功，均先保留加密原文 salary_raw。
-    // 旧逻辑把 salaryRaw=c.salaryEnc 写在 `if (decoder && c.salaryEnc)` 内，一旦 buildPageDecoder
-    // 返回 null（当页未捕获到可用薪资字体），salary_raw 既不入库、薪资也丢失，且无法离线重解。
-    // 现在先留原文，解码失败仅 salary 留空，后续可用离线字体(--font-dump 落盘)重解。
-    let salaryRaw = c.salaryEnc || null
-    let salaryConfidence = null
-    if (decoder && c.salaryEnc) {
-      RUN_SALARY_ATTEMPTED++
-      const decoded = decoder.decode(c.salaryEnc)
-      // 仅当解码出合法薪资形态才写入 salary 与置信度；否则 salary 保持 NULL，
-      // 仅保留 salary_raw 供离线重解（避免未解密字形污染 salary 列且被误判高置信度）
-      if (looksLikeSalary(decoded)) {
-        salary = decoded
-        salaryConfidence = typeof decoder.lastConfidence === 'number' ? decoder.lastConfidence : (decoder.method === 'outline' ? 1 : 0.5)
-        RUN_SALARY_DECODED++
-        // 低置信累计（红阈值）：供收尾告警与 crawl_runs 持久化
-        if (typeof salaryConfidence === 'number' && salaryConfidence < SALARY_CONF_RED) RUN_SALARY_LOWCONF++
-      }
-      if (!sampleLogged) {
-        console.log(`[salary] 样本解密：${salaryRaw} -> ${salary ?? '(未解出合法薪资，仅留 salary_raw)'}（method=${decoder.method}）`)
-        sampleLogged = true
-      }
-    }
+    // DOM fallback：薪资为加密文本，API 已返回明文，此处仅保留原始值
+    // DOM fallback：加密薪资文本不写入 salary，避免污染
+    const salary = null
     const r = importJobs(db, [
       {
         title: c.title,
@@ -817,7 +564,6 @@ async function harvestCDP(cdp, keyword = '', navUrl = '', searchRoleName = selec
         status: 'collected',
         salary,
         salary_raw: salaryRaw,
-        salary_confidence: salaryConfidence
       }
     ])
     inserted += r.inserted
@@ -1211,17 +957,7 @@ async function runLaunch() {
 }
 
 function printAlerts() {
-  // 薪资校验 SOP：低置信占比超阈值即告警（独立于风控告警，置 warn 让看板状态灯转黄/红）
-  if (RUN_SALARY_DECODED > 0) {
-    const rate = RUN_SALARY_LOWCONF / RUN_SALARY_DECODED
-    const msg = `[salary-audit] 低置信薪资 ${RUN_SALARY_LOWCONF}/${RUN_SALARY_DECODED}（占比 ${(rate * 100).toFixed(1)}%，红阈值<${SALARY_CONF_RED}）；超 ${SALARY_LOWCNF_WARN_RATE * 100}% 即需复核字体映射`
-    if (rate > SALARY_LOWCNF_WARN_RATE) {
-      console.warn('\n' + msg + ' ⚠️')
-      ALERTS.push(msg)
-    } else {
-      console.log('\n' + msg + ' ✓')
-    }
-  }
+    // 薪资解密已迁移到 API-first 采集，直接使用明文字段
   if (ALERTS.length) {
     console.warn(`\n[crawler] 本次共 ${ALERTS.length} 条告警（风控/异常/薪资校验），看板应展示状态灯：`)
     ALERTS.forEach((a) => console.warn('  - ' + a))
@@ -1244,13 +980,10 @@ function recordCrawlRun(mode) {
       TARGETS.length,
       RUN_NEW,
       RUN_UPDATED,
-      RUN_SALARY_DECODED,
-      RUN_SALARY_ATTEMPTED,
-      RUN_SALARY_LOWCONF,
       ALERTS.length,
       JSON.stringify(ALERTS)
     )
-    console.log(`[crawler] 已记录采集运行（状态=${ALERTS.length ? 'warn' : 'ok'}，新${RUN_NEW}/更${RUN_UPDATED}，薪资解密 ${RUN_SALARY_DECODED}/${RUN_SALARY_ATTEMPTED}）`)
+    console.log(`[crawler] 已记录采集运行（状态=${ALERTS.length ? 'warn' : 'ok'}，新${RUN_NEW}/更${RUN_UPDATED}）`)
   } catch (e) {
     // 仍不阻断主流程，但必须暴露错误（之前静默吞掉导致 crawl_runs 恒空却无感知）
     console.error('[crawler][ERROR] 写入 crawl_runs 失败：' + (e?.stack || e?.message || e))

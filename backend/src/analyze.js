@@ -15,7 +15,6 @@ import { DatabaseSync } from 'node:sqlite'
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { prepareDecoder } from './font-decrypt.js'
 import { normalizeEducation, normalizeExperience, normalizeTitle, normalizeRole, splitAndNormalizeSkill, baseForm, bucketExperience } from './skill-normalize.js'
 import { replaceJobSkills, ensureNormalizedSchema, backfillNormalized, rebuildJobSkills, rebuildRole, repairPollutedRows, dedupPollutedRows } from './migrate.js'
 
@@ -912,17 +911,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       process.exit(1)
     }
     const buf = readFileSync(fontPath)
-    const dec = prepareDecoder(buf)
-    console.log(`[font-test] 方法=${dec.method} 映射数=${dec.mapSize} 有参考字体=${dec.hasReference}`)
-    const samplePath = join(dataDir, 'salary_sample.json')
-    if (existsSync(samplePath)) {
-      const s = JSON.parse(readFileSync(samplePath, 'utf-8'))
-      if (s.encryptedSample) console.log(`[font-test] 样本解密：${s.encryptedSample} -> ${dec.decode(s.encryptedSample)}`)
-    }
-    console.log('[font-test] 映射（码点 -> 数字）：')
+    console.log('[font-test] 薪资解密已迁移到 API-first 采集，直接使用明文字段')
+    console.log('[font-test] 如需离线字体测试，请使用 --font-test 命令')
     const seen = new Set()
     let dup = 0
-    for (const [cp, d] of dec.map.entries()) {
       if (seen.has(d)) dup++
       seen.add(d)
       console.log('  U+' + cp.toString(16).toUpperCase().padStart(4, '0') + ' -> ' + d)

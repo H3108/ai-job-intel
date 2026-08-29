@@ -46,7 +46,6 @@ function normalize(input, index) {
     search_role: input.search_role ?? null, // Phase4：保留"搜索时用的模板角色名"，不被 rebuildRole 覆盖，用于跨角色对比
     salary: input.salary ?? null,
     salary_raw: input.salary_raw ?? null,
-    salary_confidence: input.salary_confidence ?? null,
     experience: input.experience ?? null,
     education: input.education ?? null,
     raw: input.raw ?? null,
@@ -85,7 +84,6 @@ function upsert(db, row, ts) {
          extracted = COALESCE(?, extracted),
          salary = COALESCE(?, salary),
          salary_raw = COALESCE(?, salary_raw),
-         salary_confidence = COALESCE(?, salary_confidence),
          experience = COALESCE(?, experience),
          education = COALESCE(?, education),
          role = COALESCE(?, role),
@@ -98,7 +96,7 @@ function upsert(db, row, ts) {
       row.extracted,
       row.salary,
       row.salary_raw,
-      row.salary_confidence,
+
       row.experience,
       row.education,
       row.role,
@@ -125,7 +123,7 @@ function upsert(db, row, ts) {
       row.search_role,
       row.salary,
       row.salary_raw,
-      row.salary_confidence,
+
       row.experience,
       row.education,
       row.raw,
@@ -150,7 +148,7 @@ function upsert(db, row, ts) {
              extracted = COALESCE(?, extracted),
              salary = COALESCE(?, salary),
              salary_raw = COALESCE(?, salary_raw),
-             salary_confidence = COALESCE(?, salary_confidence),
+
              experience = COALESCE(?, experience),
              education = COALESCE(?, education),
              role = COALESCE(?, role),
@@ -158,7 +156,7 @@ function upsert(db, row, ts) {
              last_seen = ?
            WHERE id = ?`
         ).run(
-          row.raw, row.extracted, row.salary, row.salary_raw, row.salary_confidence,
+          row.raw, row.extracted, row.salary, row.salary_raw,
           row.experience, row.education, row.role, row.search_role, ts, existingId
         )
         return { id: existingId, action: 'updated' }
@@ -170,7 +168,7 @@ function upsert(db, row, ts) {
 
 // 为已存在的库补齐薪资解密相关列（schema 演进：新列用 ALTER 追加，避免重建表丢数据）
 export function ensureSalaryColumns(db) {
-  for (const col of ['salary_raw TEXT', 'salary_confidence TEXT']) {
+  for (const col of ['salary_raw TEXT']) {
     const name = col.split(' ')[0]
     try {
       db.prepare(`ALTER TABLE jobs ADD COLUMN ${name} ${col.split(' ')[1]}`).run()

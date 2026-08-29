@@ -125,8 +125,7 @@ if (API_TOKEN) {
 
 // 采集健康度（看板状态灯）：从 crawl_runs(最新一次) + jobs 派生真实信号。
 // Salary 校验 SOP：除解码率外，额外暴露低置信占比，超阈值置 warn（对齐 Phase4 健康指标）。
-const SALARY_CONF_YELLOW = 0.85
-const SALARY_CONF_RED = 0.7
+// 薪资解密已移除，API 直接返回明文字段
 const SALARY_LOWCNF_WARN_RATE = 0.1
 app.get('/api/health', (_req, res) => {
   try {
@@ -150,8 +149,7 @@ app.get('/api/health', (_req, res) => {
     // 上次采集告警仅是运营日志，通过 lastRun 字段返回（Dashboard 仍展示“本次告警 N 条”），不再点亮红灯。
     let status = 'unknown'
     if (lastRun || salaryDecoded) {
-      if (salaryRate < 50) status = 'warn' // 薪资解码率过低：字体可能被 Boss 更换
-      else if (salaryLowConfRedRate > SALARY_LOWCNF_WARN_RATE * 100) status = 'warn' // 真低置信(红<0.70)占比超阈值
+      if (salaryRate < 50) status = 'warn' // 薪资数据率过低：检查 API 采集
       else status = 'ok'
     }
     res.json({
@@ -160,11 +158,6 @@ app.get('/api/health', (_req, res) => {
       total,
       salaryDecoded,
       salaryRate,
-      salaryLowConf,
-      salaryLowConfRate,
-      salaryLowConfRed,
-      salaryLowConfRedRate,
-      salaryConfThresholds: { yellow: SALARY_CONF_YELLOW, red: SALARY_CONF_RED },
       status,
       lastRun
     })
