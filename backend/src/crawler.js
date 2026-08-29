@@ -790,7 +790,15 @@ async function runCDP() {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       await connect()
-      if (await ensureLoginCDP(cdp)) { loginOk = true; break }
+      const loginResult = await ensureLoginCDP(cdp);
+      if (loginResult === 'AUTH_REQUIRED') {
+        console.warn('[crawler] 检测到未登录，AUTH_REQUIRED，退出采集。');
+        return;
+      }
+      if (loginResult === true) {
+        loginOk = true;
+        break;
+      }
       // ensureLoginCDP 返回 false = 用户主动放弃登录，非瞬态错误，不再重试
       console.warn('[crawler] 未登录，退出采集。')
       return
