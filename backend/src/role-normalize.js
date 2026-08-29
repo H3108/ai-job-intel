@@ -37,8 +37,8 @@ export const FAMILY_FUNC = {
 // 键必须与 normalizeRole() 的输出逐字一致（含空格/大小写）。
 const OVERRIDE = new Map([
   // 前端
-  ['前端工程师', { family: '前端/AI前端' }],
-  ['前端工程师', { family: '前端/AI前端' }],
+  ['前端工程师', { family: '前端/AI前端', language: 'JavaScript' }],
+  ['前端工程师', { family: '前端/AI前端', language: 'JavaScript' }],
   ['Next.js开发', { family: '前端/AI前端', language: 'JavaScript' }],
   ['JavaScript', { family: '前端/AI前端', language: 'JavaScript' }],
   // 后端/数据（决策 X：语言落标签，不单开家族）
@@ -91,7 +91,7 @@ const OVERRIDE = new Map([
 
 // 关键词兜底（未知新 title 式 role 用，有序：前者优先）
 const KEYWORD = [
-  { family: '前端/AI前端', kw: ['前端', 'react', 'vue', 'next.js', 'javascript', 'agent', '智能体', 'aigc', '大模型前端', 'llm前端'] },
+  { family: '前端/AI前端', kw: ['前端', 'react', 'vue', 'next.js', 'javascript', 'agent', '智能体', 'aigc', '大模型前端', 'llm前端', 'ai agent', 'ai前端'] },
   { family: '游戏客户端', kw: ['游戏', 'laya', '客户端'] },
   { family: '移动端', kw: ['flutter', '安卓', 'android', '跨平台', 'ios', '移动'] },
   { family: '测试/部署', kw: ['测试', 'fde', 'qa'] },
