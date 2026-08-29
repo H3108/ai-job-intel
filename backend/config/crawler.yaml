@@ -1,0 +1,85 @@
+# JobIntel 采集配置
+# 直接修改本文件即可调整城市/角色/分页，无需改代码
+
+version: '2026-08-29'
+
+# ── 城市 ──
+cities:
+  深圳:
+    code: '101280600'
+    pages: 5       # P0 城市，多采几页
+  广州:
+    code: '101280100'
+    pages: 3
+  惠州:
+    code: '101280300'
+    pages: 1
+  东莞:
+    code: '101281600'
+    pages: 1
+
+defaultCity: '深圳'
+
+# ── 角色模板 ──
+roles:
+  前端工程师:
+    tier: 1
+    keywords:
+      - '前端'
+      - '前端开发'
+      - '前端工程师'
+      - 'React前端'
+      - 'Vue前端'
+      - 'Next.js开发'
+      - 'Web前端'
+  算法工程师:
+    tier: 2
+    keywords:
+      - '大模型算法'
+      - 'LLM算法工程师'
+      - '深度学习算法'
+      - 'AI算法工程师'
+      - '机器学习算法'
+  产品经理:
+    tier: 3
+    keywords:
+      - 'AI产品经理'
+      - 'AI PM'
+      - '大模型产品'
+      - '生成式AI产品'
+      - 'AI产品设计'
+
+defaultRole: '前端工程师'
+
+# ── 采集行为 ──
+crawl:
+  # 每关键词最多翻几页（会按城市覆盖 cities.*.pages）
+  defaultPages: 1
+  # 单页期望条数，用于分页终止判断
+  expectedPerPage: 30
+  # 两次搜索之间延迟 ms
+  delayMs: 500
+
+# ── 宽匹配过滤（只保留前端 + AI 强相关） ──
+broadMatch:
+  # 命中即保留
+  frontendPatterns:
+    - '前端'
+    - 'react'
+    - 'vue'
+    - 'angular'
+    - 'electron'
+    - 'web'
+    - '小程序'
+    - 'node.js'
+    - 'next.js'
+  aiPatterns:
+    - 'ai'
+    - 'agent'
+    - '智能体'
+    - '大模型'
+    - 'llm'
+    - '算法'
+    - '机器学习'
+    - '深度学习'
+    - 'aigc'

@@ -14,7 +14,7 @@ import { importJobs, ensureSalaryColumns } from './importer.js'
 import { insights, roleDetail, getProfile, saveProfile, scopeFilter, parseSalary, LEVEL_WEIGHT, CATEGORY_PRECEDENCE } from './analyze.js'
 import { ensureNormalizedSchema, backfillNormalized, backfillScope, ensureTaxonomyColumns } from './migrate.js'
 import { createMigrationGate } from './migration-gate.js'
-import { CITIES, ROLE_TEMPLATES } from './search-templates.js'
+import { loadCrawlerConfig } from './config/load.js'
 import { classifyRole } from './role-normalize.js'
 
 // 岗位细分方向（规则聚类，零依赖）。把 89 条标题按关键词桶归类，
@@ -317,15 +317,16 @@ app.get('/api/scopes', (_req, res) => {
     // 角色选项：库内已有角色；默认角色始终可见；按 tier（1=核心在前）排序，同 tier 按模板定义顺序
     let rawRoles = db.prepare("SELECT DISTINCT role FROM jobs WHERE role IS NOT NULL AND role <> ''").all().map((r) => r.role)
     if (!rawRoles.includes(defaultRole)) rawRoles = [defaultRole, ...rawRoles]
-    const roleOrder = Object.keys(ROLE_TEMPLATES)
-    const tierOf = (n) => (ROLE_TEMPLATES[n]?.tier ?? 99)
+    const __CFG = loadCrawlerConfig()
+    const roleOrder = Object.keys(__CFG.roles || {})
+    const tierOf = (n) => ((__CFG.roles || {})[n]?.tier ?? 99)
     const idxOf = (n) => (roleOrder.includes(n) ? roleOrder.indexOf(n) : 999)
     const roles = rawRoles.sort((a, b) => tierOf(a) - tierOf(b) || idxOf(a) - idxOf(b))
     // 城市选项 = 库内已有城市 ∪ 规划采集城市（CITIES 码表），按白名单收敛下拉范围。
     // 当前仅保留 深圳/广州/惠州/东莞（用户指定）。注意 ScopeSelector 会再合并 data.cities 与
     // data.plannedCities，故两者都需过滤，否则全量城市会从 plannedCities 漏回下拉。
-    const ALLOWED_CITIES = ['深圳', '广州', '惠州', '东莞']
-    const plannedCities = Object.keys(CITIES).filter((c) => ALLOWED_CITIES.includes(c))
+    const ALLOWED_CITIES = Object.keys(__CFG.cities || {})
+    const plannedCities = ALLOWED_CITIES
     const cities = db
       .prepare("SELECT DISTINCT location FROM jobs WHERE location IS NOT NULL AND location <> ''")
       .all()

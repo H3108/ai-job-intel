@@ -89,13 +89,20 @@ const _matrixRoles = [...new Set(TARGETS.map((t) => t.role))]
 const _matrixCities = [...new Set(TARGETS.map((t) => t.city))]
 console.log(`[crawler] 采集矩阵 → ${TARGETS.length} 个搜索（${_matrixRoles.length} 角色 × ${_matrixCities.length} 城市）：${_matrixRoles.join('/')} @ ${_matrixCities.join('/')}`)
 
-// 城市分页配置：深圳/广州 5 页全量，惠州/东莞 1 页采样
-const CITY_PAGE_LIMITS = {
-  '深圳': 5,
-  '广州': 5,
-  '惠州': 1,
-  '东莞': 1
-}
+// 城市分页配置：从 crawler.yaml 读取
+const CITY_PAGE_LIMITS = (() => {
+  try {
+    const cfg = loadCrawlerConfig()
+    const m = {}
+    for (const [name, info] of Object.entries(cfg.cities || {})) {
+      m[name] = info.pages ?? 1
+    }
+    return m
+  } catch (e) {
+    console.warn('[crawler] crawler.yaml 读取失败，回退默认 1 页：', e.message)
+    return {}
+  }
+})()
 
 // 合法薪资形态判定（模块级，buildPageDecoder 与 harvestCDP 共用）：
 // 含真实数字 + 含单位(K/万/元) + 无残留 PUA（解密失败）。

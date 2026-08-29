@@ -94,10 +94,14 @@ export const BROAD_RULE = {
   anyOf: ['AI', '大模型', 'LLM', 'Agent', '智能体', 'AIGC', 'React', 'Vue', 'Next.js']
 }
 
-// 前端岗位直接保留（核心需求），AI信号为加分项
+// 前端岗位 + AI 强相关岗位都保留
 export function isCoreFrontend(title = '') {
   const t = title.toLowerCase()
-  return /前端|react|vue|angular|electron|web|小程序|node\.?js|next\.js/i.test(t)
+  // 前端相关
+  const isFrontend = /前端|react|vue|angular|electron|web|小程序|node\.?js|next\.js/i.test(t)
+  // AI 强相关（与前端配合紧密）
+  const isAIRelated = /ai|agent|智能体|大模型|llm|算法|机器学习|深度学习|aigc/i.test(t)
+  return isFrontend || isAIRelated
 }
 export function matchesBroad(title = '') {
   const t = title.toLowerCase()
