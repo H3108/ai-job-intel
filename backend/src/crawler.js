@@ -249,6 +249,7 @@ async function ensureLoginCDP(cdp) {
 
 async function waitCardsCDP(cdp, timeoutMs = 60000) {
   const start = Date.now()
+  console.log('[crawler][wait] 开始等待卡片，timeout=' + timeoutMs)
   // 第一阶段：等 SPA 加载骨架消失（"加载中"转圈不再可见）
   while (Date.now() - start < timeoutMs) {
     const loading = await cdp.evaluate(`(() => {
@@ -261,12 +262,14 @@ async function waitCardsCDP(cdp, timeoutMs = 60000) {
     if (!loading) break
     await sleep(800)
   }
+  console.log('[crawler][wait] 第一阶段完成，开始第二阶段')
   // 第二阶段：等职位卡片出现（至少 1 张）
   while (Date.now() - start < timeoutMs) {
     const n = await cdp.evaluate(`document.querySelectorAll('a[href*="job_detail"]').length`)
-    if (n > 0) return n
+    if (n > 0) { console.log('[crawler][wait] 找到 ' + n + ' 张卡片'); return n }
     await sleep(700)
   }
+  console.log('[crawler][wait] 超时，未找到卡片')
   return 0
 }
 
@@ -300,18 +303,19 @@ async function scrapeViaCDP(cdp) {
   // 直接定位职位标题链接 a[href*="job_detail"]，向上找含公司链接的卡片容器，按 href 去重。
   return cdp.evaluate(`(() => {
     const titleLinks = Array.from(document.querySelectorAll('a[href*="job_detail"]'));
+    console.log('[scrape] 找到 ' + titleLinks.length + ' 个链接');
     const cards = [];
     const seen = new Set();
     for (const a of titleLinks) {
       const href = a.getAttribute('href') || '';
       if (href.includes('securityId')) continue;       // 跳过“查看更多信息”等带令牌的链接
-      if (!/job_detail\\//.test(href)) continue;
+      if (!/job_detail\\//.test(href)) { console.log('[scrape] 跳过非岗位链接:', href.slice(0, 50)); continue; }
       // title 来自职位标题链接；Boss 该链接 textContent 常含整张卡片文本（标题+薪资+公司+城市），
       // 故只取首个非空行作为真实标题，避免把薪资/公司/城市塞进 title。
       const titleLines = (a.textContent || '').split('\\n').map((s) => s.trim()).filter(Boolean)
       const title = titleLines[0] || ''
       if (!title) continue;
-      if (new RegExp('职位搜索|职位详情|BOSS直聘|立即登录|登录/注册|查看更多|查看全部').test(title)) continue;  // 丢弃页面级脏标题
+      if (new RegExp('职位搜索|职位详情|BOSS直聘|立即登录|登录/注册|查看更多|查看全部').test(title)) { console.log('[scrape] 跳过脏标题:', title.slice(0, 50)); continue; }  // 丢弃页面级脏标题
       let card = a;
       while (card && card !== document.body) {
         if (card.querySelector && card.querySelector('a[href*="gongsi"]')) break;
@@ -327,7 +331,7 @@ async function scrapeViaCDP(cdp) {
       // 薪资在卡片上、用加密字体渲染：取 .salary（或含 salary 类）元素的文本，得到的是 PUA 码点（待解密）
       const salaryEl = card ? card.querySelector('span.salary, [class*="salary"]') : null;
       const salaryEnc = salaryEl ? (salaryEl.textContent || '').trim() : '';
-      if (seen.has(href)) continue;
+      if (seen.has(href)) { console.log('[scrape] 跳过重复 href'); continue; }
       seen.add(href);
       cards.push({
         title,
@@ -336,7 +340,7 @@ async function scrapeViaCDP(cdp) {
         salaryEnc
       });
     }
-    return { count: cards.length, data: cards, url: location.href };
+    console.log('[scrape] 最终返回 ' + cards.length + ' 张卡片'); return { count: cards.length, data: cards, url: location.href };
   })()`)
 }
 
@@ -769,9 +773,12 @@ async function runCDP() {
     await cdp.send('Page.enable')
     // 启用网络拦截，捕获浏览器已鉴权下载的字体字节（解决 kanzhun-Regular 等 static.zhipin.com 字体 Node 无法复下载的问题）
     await cdp.send('Network.enable', { maxResourceBufferSize: 10 * 1024 * 1024, maxPostDataSize: 1024 * 1024 }).catch(() => {})
-    // 若拿到的标签页还不是 Boss 页面（如刚建的空白页），先跳到第一个关键词
+    // 若拿到的标签页还不是搜索页，或 URL 缺少 query/city 参数，先跳到第一个关键词
     const firstUrl = TARGETS[0]?.url
-    if (!/zhipin\.com/.test(target.url || '')) {
+    const needsNav = !/zhipin\.com\/web\/geek\/jobs/.test(target.url || '') ||
+                     !/query=/.test(target.url || '') ||
+                     !/city=/.test(target.url || '')
+    if (needsNav) {
       await cdp.send('Page.navigate', { url: firstUrl })
       await sleep(2000)
     }
