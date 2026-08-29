@@ -91,7 +91,7 @@ export default function PersonaPage() {
       exposure = {}
     }
     setForm({
-      target_role: profile.target_role || "AI Agent 前端",
+      target_role: profile.target_role || "前端工程师",
       current_skills: parseList(profile.current_skills),
       exposureLevel: exposure.level || "",
       exposureTools: (exposure.tools || []).join("\n"),
@@ -105,7 +105,7 @@ export default function PersonaPage() {
   const mutation = useMutation({
     mutationFn: (f: FormState) =>
       fetchUpdateProfile({
-        target_role: f.target_role.trim() || "AI Agent 前端",
+        target_role: f.target_role.trim() || "前端工程师",
         current_skills: toList(f.current_skills),
         ai_exposure: {
           level: f.exposureLevel.trim() || undefined,

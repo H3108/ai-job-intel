@@ -107,7 +107,7 @@ export default function ImportPanel({ onImported }: { onImported: () => void }) 
         aria-label="JD JSON 内容"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='[{"title":"AI Agent 前端","company":"某司","location":"深圳","raw":"...","extracted":{...}}]'
+        placeholder='[{"title":"前端工程师","company":"某司","location":"深圳","raw":"...","extracted":{...}}]'
         className="font-mono"
       />
 

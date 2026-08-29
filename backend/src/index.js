@@ -307,7 +307,7 @@ app.get('/api/jobs/:id', (req, res) => {
 app.get('/api/scopes', (_req, res) => {
   try {
     // 默认角色：优先取 persona 目标角色，回退 AI Agent 前端
-    let defaultRole = 'AI Agent 前端'
+    let defaultRole = '前端工程师'
     try {
       const up = db.prepare("SELECT target_role FROM user_profile WHERE id='me'").get()
       if (up && up.target_role) defaultRole = up.target_role
@@ -497,7 +497,7 @@ app.get('/api/compare', (req, res) => {
 // 支持 ?role=（归一化角色，与 /api/analytics、/api/compare、/api/jobs 同口径）+ ?city= 作用域。
 app.get('/api/role-detail', (req, res) => {
   try {
-    const role = String(req.query.role || 'AI Agent 前端')
+    const role = String(req.query.role || '前端工程师')
     const scope = {}
     if (req.query.city) scope.city = String(req.query.city)
     scope.role = role

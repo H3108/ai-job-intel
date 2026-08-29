@@ -233,7 +233,7 @@ export function normalizeRole(raw) {
     /(前端|react|vue|angular|electron|web|小程序|node\.?js)/i.test(t0) &&
     /(ai\s*agent|agent\s*方向|agent\s*前端|智能体|ai\s*方向|ai\s*应用\s*方向|ai\s*agent\s*方向|ai\s*智能体\s*方向|ai\s*[-_]?\s*前端|前端\s*[-_]?\s*ai)/i.test(t0)
   ) {
-    return 'AI Agent 前端'
+    return '前端工程师'  // 归一：AI Agent 前端 → 前端工程师
   }
   let t = t0
   t = t.replace(ROLE_CITY_PREFIX, '')
