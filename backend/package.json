@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "express": "^4.22.2",
-    "fontkit": "^2.0.4"
+    "fontkit": "^2.0.4",
+    "js-yaml": "^5.4.1"
   },
   "devDependencies": {
     "playwright": "^1.62.0"
