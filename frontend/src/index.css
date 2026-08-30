@@ -1,1 +1,44 @@
-@tailwind base;@tailwind components;@tailwind utilities;@layer base { :root { --bg: #0B0C0F; --surface: #121316; --surface-solid: #181A1F; --border: #23262C; --text: #E6E6E6; --muted: #9CA3AF; --accent: #34D399; --accent-hover: #2cc28b; --on-accent: #022c22; --danger: #EF4444; --danger-fg: #FEE2E2; --success: #22C55E; --warning: #F59E0B; --info: #3B82F6; --shadow: 0 1px 3px rgba(0,0,0,.35); } body { background: var(--bg); color: var(--text); } }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0B0C0F;
+    --surface: #141518;
+    --surface-solid: #1A1B20;
+    --text: #E9ECF1;
+    --muted: #8B8F9A;
+    --accent: #D97706;
+    --accent-hover: #B45309;
+    --border: #23252B;
+    --success: #22C55E;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --font-heading: 'Fira Code', 'Geist Mono', ui-monospace, monospace;
+    --font-body: 'Fira Sans', 'Geist', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .font-display { font-family: var(--font-heading); }
+  .bg-surface { background: var(--surface); }
+  .bg-surface-solid { background: var(--surface-solid); }
+  .text-text { color: var(--text); }
+  .text-muted { color: var(--muted); }
+  .border-border { border-color: var(--border); }
+}
