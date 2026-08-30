@@ -418,6 +418,37 @@ app.post('/api/intelligence/write', express.json({ type: 'json' }), (req, res) =
   }
 })
 
+// Trigger Hush AI OS analysis pipeline
+app.post('/api/intelligence/trigger', async (req, res) => {
+  try {
+    const { spawn } = await import('child_process')
+    const { basename } = await import('path')
+    const scripts = [
+      '/opt/hush-ai/agents/scripts/jobintel-career-advisor.sh',
+      '/opt/hush-ai/agents/scripts/jobintel-skill-gap.sh',
+      '/opt/hush-ai/agents/scripts/jobintel-learning-roadmap.sh',
+    ]
+    const results = []
+    for (const script of scripts) {
+      const p = spawn('bash', [script], { stdio: ['ignore', 'pipe', 'pipe'] })
+      let stdout = ''
+      let stderr = ''
+      p.stdout.on('data', (d) => { stdout += d.toString() })
+      p.stderr.on('data', (d) => { stderr += d.toString() })
+      await new Promise((resolve, reject) => {
+        p.on('close', (code) => {
+          if (code === 0) resolve()
+          else reject(new Error(`${script} exit ${code}: ${stderr || stdout}`))
+        })
+      })
+      results.push({ script: basename(script), stdout, stderr })
+    }
+    res.json({ ok: true, triggered: results.map((r) => r.script) })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
 const PORT = process.env.PORT || 3001
 const HOST = process.env.HOST || 'localhost'
 app.listen(PORT, HOST, () => {

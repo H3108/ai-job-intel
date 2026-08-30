@@ -93,6 +93,12 @@ export async function fetchIntelligenceLatest(): Promise<IntelligenceLatest> {
   return res.json()
 }
 
+export async function triggerIntelligence(): Promise<{ ok: boolean; triggered?: string[]; error?: string }> {
+  const res = await fetch('/api/intelligence/trigger', { method: 'POST' })
+  if (!res.ok) { let d=''; try{d=(await res.json()).error||''}catch{}; throw new Error(`触发分析失败：${res.status}${d?` · ${d}`:''}`) }
+  return res.json()
+}
+
 export async function triggerCrawl(): Promise<{ ok: boolean; message?: string; error?: string }> {
   const res = await fetch('/api/crawl', { method: 'POST' })
   if (!res.ok) { let d=''; try{d=(await res.json()).error||''}catch{}; throw new Error(`触发抓取失败：${res.status}${d?` · ${d}`:''}`) }

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { fetchIntelligenceLatest } from "../api/client"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { fetchIntelligenceLatest, triggerIntelligence } from "../api/client"
 import { Section, Badge, EmptyState } from "../design-system"
 
 const TYPES = [
@@ -19,15 +19,31 @@ function safeJson(raw: string) {
 }
 
 export default function ReportsPage() {
+  const qc = useQueryClient()
   const intel = useQuery({ queryKey: ["intelligenceLatest"], queryFn: fetchIntelligenceLatest })
+  const trigger = useMutation({
+    mutationFn: triggerIntelligence,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["intelligenceLatest"] })
+    },
+  })
   const types = intel.data?.types || {}
   const keys = Object.keys(types)
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-2xl font-semibold text-text">智能分析</h1>
-        <p className="text-sm text-muted">由 Hush AI OS 生成市场分析、求职建议、技能差距与学习路线。</p>
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl font-semibold text-text">智能分析</h1>
+          <p className="text-sm text-muted">由 Hush AI OS 生成市场分析、求职建议、技能差距与学习路线。</p>
+        </div>
+        <button
+          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-bg transition-colors hover:opacity-90 disabled:opacity-60"
+          disabled={trigger.isPending}
+          onClick={() => trigger.mutate()}
+        >
+          {trigger.isPending ? '生成中...' : '手动触发分析'}
+        </button>
       </div>
 
       <Section title="AI 结果" desc="采集成功后自动生成；也可手动运行 Agent 脚本刷新。">
