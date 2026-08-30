@@ -10,12 +10,53 @@ const RoadmapPage = lazy(() => import("./pages/RoadmapPage"))
 const ReportsPage = lazy(() => import("./pages/ReportsPage"))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"))
 
+function IconChart(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M9 22V12h6v10" />
+    </svg>
+  )
+}
+function IconSearch(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.35-4.35" />
+    </svg>
+  )
+}
+function IconUser(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+    </svg>
+  )
+}
+function IconRoadmap(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  )
+}
+function IconReport(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a5 5 0 0 1 5 5c0 2.5-1.5 4.5-3 6s-3 3.5-3 6a5 5 0 0 1-5-5c0-2.5 1.5-4.5 3-6s3-3.5 3-6z" />
+      <path d="M12 12v10" />
+    </svg>
+  )
+}
+
 const NAV = [
-  { to: "/", label: "市场概览", end: true, icon: "📊" },
-  { to: "/market", label: "岗位市场", icon: "🔍" },
-  { to: "/profile", label: "我的画像", icon: "👤" },
-  { to: "/roadmap", label: "学习路线", icon: "📚" },
-  { to: "/reports", label: "智能分析", icon: "🧠" },
+  { to: "/", label: "市场概览", end: true, icon: IconChart },
+  { to: "/market", label: "岗位市场", icon: IconSearch },
+  { to: "/profile", label: "我的画像", icon: IconUser },
+  { to: "/roadmap", label: "学习路线", icon: IconRoadmap },
+  { to: "/reports", label: "智能分析", icon: IconReport },
 ]
 
 function AppShell() {
@@ -35,18 +76,21 @@ function AppShell() {
             </div>
           </div>
           <nav className="flex items-center gap-1">
-            {NAV.map((item) => (
-              <button
-                key={item.to}
-                onClick={() => navigate(item.to)}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors hover:text-text ${
-                  current === item.to ? "text-text" : "text-muted"
-                }`}
-              >
-                {item.icon && <span className="mr-1">{item.icon}</span>}
-                {item.label}
-              </button>
-            ))}
+            {NAV.map((item) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.to}
+                  onClick={() => navigate(item.to)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    current === item.to ? "text-text" : "text-muted"
+                  }`}
+                >
+                  {Icon ? <Icon className="h-4 w-4" /> : null}
+                  <span>{item.label}</span>
+                </button>
+              )
+            })}
           </nav>
         </div>
       </header>

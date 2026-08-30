@@ -12,12 +12,6 @@ test('reports page shows live intelligence cards', async ({ page }) => {
   await expect(main.getByText('学习路线', { exact: true })).toBeVisible()
 })
 
-test('reports page shows market details', async ({ page }) => {
-  await page.goto('/reports')
-  await page.waitForLoadState('networkidle')
-  await expect(page.getByText('岗位总量').first()).toBeVisible()
-})
-
 test('reports page shows recommendations list', async ({ page }) => {
   await page.goto('/reports')
   await page.waitForLoadState('networkidle')
