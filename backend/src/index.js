@@ -16,7 +16,7 @@ const root = join(__dirname, '..', '..')
 const dataDir = join(root, 'data')
 mkdirSync(dataDir, { recursive: true })
 
-const dbPath = process.env.JOBS_DB_PATH || join(dataDir, 'jobs_v2.db')
+const dbPath = process.env.JOBS_DB_PATH || join(dataDir, 'jobs.db')
 const db = new DatabaseSync(dbPath)
 const schemaSql = readFileSync(join(dataDir, 'schema-v2.sql'), 'utf-8')
 db.exec(schemaSql)
@@ -67,6 +67,7 @@ if (API_TOKEN) {
 }
 
 // Jobs
+// Jobs list must be registered before /api/jobs/:id, otherwise /stats/search would be treated as an id.
 app.get('/api/jobs', (req, res) => {
   try {
     const conds = []
@@ -87,6 +88,25 @@ app.get('/api/jobs', (req, res) => {
     if (limit) sql += ` LIMIT ${limit} OFFSET ${offset}`
     const rows = db.prepare(sql).all(...params)
     res.json({ total, limit: limit || total, offset, jobs: rows })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
+app.get('/api/jobs/search', (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim()
+    if (!q) return res.status(400).json({ ok: false, error: 'missing q' })
+    const city = req.query.city ? String(req.query.city) : null
+    const limitRaw = parseInt(req.query.limit, 10)
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50
+    const like = `%${q}%`
+    const params = [like, like, like]
+    let where = '(title LIKE ? OR company LIKE ? OR description LIKE ?)'
+    if (city) { where += ' AND city = ?'; params.push(city) }
+    const sql = `SELECT id, source, source_job_id, title, company, city, salary_raw, salary_min, salary_max, salary_period, salary_note, experience, education, posted_at, collected_at, updated_at, status FROM jobs WHERE ${where} ORDER BY posted_at DESC, collected_at DESC LIMIT ${limit}`
+    const rows = db.prepare(sql).all(...params)
+    res.json({ total: rows.length, jobs: rows })
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) })
   }
@@ -115,26 +135,7 @@ app.get('/api/jobs/stats', (_req, res) => {
   }
 })
 
-app.get('/api/jobs/search', (req, res) => {
-  try {
-    const q = String(req.query.q || '').trim()
-    if (!q) return res.status(400).json({ ok: false, error: 'missing q' })
-    const city = req.query.city ? String(req.query.city) : null
-    const limitRaw = parseInt(req.query.limit, 10)
-    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50
-    const like = `%${q}%`
-    const params = [like, like, like]
-    let where = '(title LIKE ? OR company LIKE ? OR description LIKE ?)'
-    if (city) { where += ' AND city = ?'; params.push(city) }
-    const sql = `SELECT id, source, source_job_id, title, company, city, salary_raw, salary_min, salary_max, salary_period, salary_note, experience, education, posted_at, collected_at, updated_at, status FROM jobs WHERE ${where} ORDER BY posted_at DESC, collected_at DESC LIMIT ${limit}`
-    const rows = db.prepare(sql).all(...params)
-    res.json({ total: rows.length, jobs: rows })
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) })
-  }
-})
 
-// Scopes
 app.get('/api/scopes', (_req, res) => {
   try {
     const cities = db.prepare("SELECT DISTINCT city FROM jobs WHERE city IS NOT NULL AND city <> '' ORDER BY city").all().map((r) => r.city)

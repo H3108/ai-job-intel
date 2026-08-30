@@ -17,7 +17,7 @@ const PROFILE_DIR = join(dataDir, 'boss_profile')
 mkdirSync(dataDir, { recursive: true })
 mkdirSync(PROFILE_DIR, { recursive: true })
 
-const db = new DatabaseSync(join(dataDir, 'jobs_v2.db'))
+const db = new DatabaseSync(join(dataDir, 'jobs.db'))
 db.exec(readFileSync(join(dataDir, 'schema-v2.sql'), 'utf-8'))
 
 const limiter = new (class RateLimiter {
