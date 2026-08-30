@@ -126,12 +126,15 @@ if (API_TOKEN) {
 // Salary 校验 SOP：除解码率外，额外暴露低置信占比，超阈值置 warn（对齐 Phase4 健康指标）。
 // 薪资解密已移除，API 直接返回明文字段
 app.get('/api/admin/status', (_req, res) => {
-  const secret = process.env.ADMIN_SECRET || 'hush-admin'
-  const enabled = Boolean(process.env.ADMIN_SECRET)
-  res.json({ ok: true, enabled, secret })
+  const secret = process.env.ADMIN_SECRET
+  const enabled = Boolean(secret)
+  res.json({ ok: true, enabled, secret: enabled ? secret : undefined })
 })
 
-// 采集健康度（看板状态灯）：
+// 采集健康度（看板状态灯）：从 crawl_runs(最新一次) + jobs 派生真实信号。
+// Salary 校验 SOP：除解码率外，额外暴露低置信占比，超阈值置 warn（对齐 Phase4 健康指标）。
+// 薪资解密已移除，API 直接返回明文字段
+app.get('/api/health', (_req, res) => {
   try {
     const total = db.prepare('SELECT COUNT(*) AS n FROM jobs').get().n
     const lastRun = db.prepare('SELECT * FROM crawl_runs ORDER BY id DESC LIMIT 1').get() || null
