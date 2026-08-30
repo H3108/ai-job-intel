@@ -167,6 +167,13 @@ export async function fetchScopes(): Promise<Scopes> {
   if (!res.ok) throw new Error(`fetch /api/scopes failed: ${res.status}`)
   return res.json()
 }
+export interface AdminStatus { ok: boolean; enabled: boolean; secret?: string }
+export async function fetchAdminStatus(): Promise<AdminStatus> {
+  const res = await fetch('/api/admin/status')
+  if (!res.ok) throw new Error(`fetch /api/admin/status failed: ${res.status}`)
+  return res.json()
+}
+
 
 // 跨角色对比（方案 D）：每个角色一份 insights 子集，按角色分组返回。
 export interface CompareRole {

@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   fetchJobs,
   fetchSalaryAudit,
+  fetchScopes,
   type JobsList,
 } from "../api/client"
 import { useAnalytics, useScope } from "../api/useAnalytics"
@@ -17,6 +18,15 @@ export default function MarketPage() {
   const analytics = useAnalytics(scope)
   const [q, setQ] = useState("")
   const [page, setPage] = useState(0)
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  const scopesQuery = useQuery({
+    queryKey: ["scopes"],
+    queryFn: fetchScopes,
+  })
+
+  const roleOptions = useMemo(() => scopesQuery.data?.roles ?? [], [scopesQuery.data?.roles])
+  const cityOptions = useMemo(() => scopesQuery.data?.cities ?? [], [scopesQuery.data?.cities])
 
   const jobsQuery = useQuery<JobsList>({
     queryKey: ["jobs", scope, page],
@@ -32,7 +42,6 @@ export default function MarketPage() {
   const loading = jobsQuery.isLoading
   const error = jobsQuery.error ? friendlyError(jobsQuery.error) : null
 
-  // 搜索时重置分页，基于 scope 重新拉取列表
   const filteredQuery = useQuery<JobsList>({
     enabled: !!q.trim(),
     queryKey: ["jobs", scope, q.trim(), 0],
@@ -54,8 +63,30 @@ export default function MarketPage() {
     .filter(Boolean)
     .join(" · ")
 
+
+  const updateScope = useCallback((key: 'role' | 'city', value: string) => {
+    const next = new URLSearchParams(window.location.search)
+    if (value) {
+      next.set(key, value)
+    } else {
+      next.delete(key)
+    }
+    window.history.replaceState(null, '', `${window.location.pathname}?${next.toString()}`)
+  }, [])
+
   return (
     <div className="space-y-10">
+      <FilterDrawer
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        role={scope.role}
+        city={scope.city}
+        onRole={(r) => updateScope('role', r)}
+        onCity={(c) => updateScope('city', c)}
+        roles={roleOptions}
+        cities={cityOptions}
+      />
+
       <PageHeader
         title="岗位市场"
         desc={`${scopeLabel || "全部市场"} · 共 ${currentTotal} 个职位`}
@@ -79,6 +110,53 @@ export default function MarketPage() {
             className="sm:w-72"
             aria-label="搜索职位"
           />
+          <div className="text-sm text-muted">
+            {list.length} / {currentTotal}
+          </div>
+        </div>
+
+        {/* 桌面端内联筛选器：角色/城市 + 搜索并排 */}
+        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs text-muted">角色</label>
+            <select
+              value={scope.role ?? ""}
+              onChange={(e) => {
+                const next = new URLSearchParams(window.location.search)
+                if (e.target.value) next.set("role", e.target.value)
+                else next.delete("role")
+                window.history.replaceState(null, "", `${window.location.pathname}?${next.toString()}`)
+              }}
+              className="h-9 rounded-lg border border-border bg-bg px-3 text-sm"
+            >
+              <option value="">全部角色</option>
+              {roleOptions.map((r: string) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+
+            <label className="text-xs text-muted">城市</label>
+            <select
+              value={scope.city ?? ""}
+              onChange={(e) => {
+                const next = new URLSearchParams(window.location.search)
+                if (e.target.value) next.set("city", e.target.value)
+                else next.delete("city")
+                window.history.replaceState(null, "", `${window.location.pathname}?${next.toString()}`)
+              }}
+              className="h-9 rounded-lg border border-border bg-bg px-3 text-sm"
+            >
+              <option value="">全部城市</option>
+              {cityOptions.map((c: string) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="text-sm text-muted">
             {list.length} / {currentTotal}
           </div>
@@ -164,6 +242,46 @@ export default function MarketPage() {
   )
 }
 
+function FilterDrawer({open, onClose, role, city, onRole, onCity, roles, cities}: {
+  open: boolean
+  onClose: () => void
+  role?: string
+  city?: string
+  onRole: (v: string) => void
+  onCity: (v: string) => void
+  roles: string[]
+  cities: string[]
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="筛选">
+      <div className="mx-auto max-w-6xl rounded-t-2xl border-t border-border bg-bg p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold text-text">筛选</div>
+          <button type="button" onClick={onClose} className="text-muted" aria-label="关闭筛选">✕</button>
+        </div>
+        <div className="mt-3 flex flex-col gap-3">
+          <div>
+            <label className="text-xs text-muted">角色</label>
+            <select value={role ?? ""} onChange={(e) => onRole(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm">
+              <option value="">全部角色</option>
+              {roles.map((r: string) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-muted">城市</label>
+            <select value={city ?? ""} onChange={(e) => onCity(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm">
+              <option value="">全部城市</option>
+              {cities.map((c: string) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <Button className="w-full" onClick={onClose}>查看结果</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DistPanel({
   analytics,
 }: {
@@ -217,30 +335,26 @@ function SalaryPanel({
     return (
       <p className="text-sm text-muted">暂无薪资摘要，等待后端 salaryStats 生成。</p>
     )
-
-  const items = [
-    { label: "已解密薪资", value: summary.decoded ?? 0 },
-    { label: "低置信(黄)", value: summary.lowConfYellow ?? 0 },
-    { label: "低置信(红)", value: summary.lowConfRed ?? 0 },
-    {
-      label: "红区占比",
-      value: `${summary.lowConfRedRate ?? 0}%`,
-    },
-  ]
-
+  const { decoded, lowConfYellow, lowConfRed, lowConfRedRate } = summary
+  const rate = typeof lowConfRedRate === "number" ? `${(lowConfRedRate * 100).toFixed(1)}%` : "—"
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {items.map((it) => (
-        <div
-          key={it.label}
-          className="rounded-xl border border-border bg-surface p-4"
-        >
-          <div className="text-xs text-muted">{it.label}</div>
-          <div className="font-display text-2xl font-semibold text-text">
-            {it.value}
-          </div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="rounded-xl border border-border bg-surface px-4 py-3">
+        <div className="text-xs text-muted">已解密样本</div>
+        <div className="mt-1 text-lg font-semibold text-text">{decoded ?? 0}</div>
+      </div>
+      <div className="rounded-xl border border-border bg-surface px-4 py-3">
+        <div className="text-xs text-muted">低置信黄</div>
+        <div className="mt-1 text-lg font-semibold text-text">{lowConfYellow ?? 0}</div>
+      </div>
+      <div className="rounded-xl border border-border bg-surface px-4 py-3">
+        <div className="text-xs text-muted">低置信红</div>
+        <div className="mt-1 text-lg font-semibold text-text">{lowConfRed ?? 0}</div>
+      </div>
+      <div className="rounded-xl border border-border bg-surface px-4 py-3">
+        <div className="text-xs text-muted">低置信红占比</div>
+        <div className="mt-1 text-lg font-semibold text-text">{rate}</div>
+      </div>
     </div>
   )
 }

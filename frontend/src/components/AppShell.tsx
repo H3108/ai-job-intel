@@ -57,10 +57,25 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const [ok, setOk] = useState(false)
   const [input, setInput] = useState("")
   const [error, setError] = useState("")
+  const [secret, setSecret] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/status')
+      .then(r => r.ok ? r.json() : Promise.resolve({ secret: null }))
+      .then((data: { secret?: string }) => {
+        if (!cancelled) setSecret(data.secret || ADMIN_SECRET)
+      })
+      .catch(() => {
+        if (!cancelled) setSecret(ADMIN_SECRET)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (input === ADMIN_SECRET) {
+    const expected = secret || ADMIN_SECRET
+    if (input === expected) {
       setOk(true)
       sessionStorage.setItem("hush_admin", "1")
     } else {
