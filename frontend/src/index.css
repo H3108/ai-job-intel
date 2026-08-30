@@ -34,9 +34,15 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   ::selection { background: rgba(124,58,237,0.35); color: #fff; }
+}
+
+@layer components {
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+  .min-w-0 { min-width: 0; }
 }
 
 @layer components {

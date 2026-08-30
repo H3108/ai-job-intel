@@ -75,19 +75,19 @@ function AppShell() {
               <div className="text-xs text-muted">AI 求职情报</div>
             </div>
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV.map((item) => {
               const Icon = item.icon
               return (
                 <button
                   key={item.to}
                   onClick={() => navigate(item.to)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:px-3 ${
                     current === item.to ? "text-text" : "text-muted"
                   }`}
                 >
-                  {Icon ? <Icon className="h-4 w-4" /> : null}
-                  <span>{item.label}</span>
+                  {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
+                  <span className="hidden sm:inline">{item.label}</span>
                 </button>
               )
             })}
