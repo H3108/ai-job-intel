@@ -28,11 +28,8 @@ const NAV_GROUPS = [
     label: "看板",
     items: [
       { to: "/", label: "能力总览", end: true },
-      { to: "/gap", label: "能力缺口" },
       { to: "/roadmap", label: "学习路线" },
-      { to: "/clusters", label: "岗位图谱" },
       { to: "/data", label: "数据洞察" },
-      { to: "/data-schedule", label: "数据调度" },
     ],
   },
   {
@@ -40,20 +37,12 @@ const NAV_GROUPS = [
     items: [
       { to: "/jobs", label: "职位列表" },
       { to: "/compare", label: "角色对比" },
-      { to: "/salary-audit", label: "薪校解密" },
       { to: "/role-detail", label: "岗位细报" },
     ],
   },
   {
     label: "个人",
     items: [{ to: "/persona", label: "我的画像" }],
-  },
-  {
-    label: "系统",
-    items: [
-      { to: "/analysis-showcase", label: "分析组件" },
-      { to: "/design-system", label: "设计规范" },
-    ],
   },
 ]
 
