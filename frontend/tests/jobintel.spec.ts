@@ -59,7 +59,7 @@ test('dashboard sorts by title', async ({ page }) => {
 test('market search filters results', async ({ page }) => {
   await page.goto('/market')
   await page.waitForLoadState('networkidle')
-  await page.getByPlaceholder('搜索标题/公司/技能').fill('React')
+  await page.getByPlaceholder('搜索标题、公司或技能...').fill('React')
   await page.waitForTimeout(400)
   const firstCard = page.locator('section:has-text("岗位列表") a[href*="/jobs/"] .font-medium').first()
   await expect(firstCard).toContainText('React')

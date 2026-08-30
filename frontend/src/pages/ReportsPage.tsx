@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchIntelligenceLatest, triggerIntelligence } from "../api/client"
-import { Section, Badge, EmptyState } from "../design-system"
+import { Section, Badge, EmptyState, PageHeader, Button } from "../design-system"
 
 const TYPES = [
   { key: "market", label: "市场分析" },
@@ -107,68 +107,70 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="font-display text-2xl font-semibold text-text">智能分析</h1>
-          <p className="text-sm text-muted">由 Hush AI OS 生成市场分析、求职建议、技能差距与学习路线。</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge tone={status === "ready" ? "success" : "warning"}>{statusLabel}</Badge>
-          <button
-            className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-bg transition-colors hover:opacity-90 disabled:opacity-60"
-            disabled={trigger.isPending}
-            onClick={() => trigger.mutate()}
-          >
-            {trigger.isPending ? '生成中...' : '手动触发分析'}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="智能分析"
+        desc="由 Hush AI OS 生成市场分析、求职建议、技能差距与学习路线。"
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge tone={status === "ready" ? "success" : "warning"}>{statusLabel}</Badge>
+            <Button variant="secondary" loading={trigger.isPending} onClick={() => trigger.mutate()}>
+              {trigger.isPending ? '生成中...' : '手动触发分析'}
+            </Button>
+          </div>
+        }
+      />
 
-      <Section title="AI 结果" desc="采集成功后自动生成；也可手动运行 Agent 脚本刷新。">
-        {keys.length === 0 && (
-          <EmptyState title="暂无分析结果" desc="等待 collector-agent 写入或手动触发分析。" />
-        )}
+      {intel.isLoading ? (
+        <Section title="AI 结果" desc="正在读取最新分析结果…">
+          <EmptyState title="加载中" desc="稍后刷新页面即可查看。" />
+        </Section>
+      ) : (
+        <Section title="AI 结果" desc="采集成功后自动生成；也可手动运行 Agent 脚本刷新。">
+          {keys.length === 0 && (
+            <EmptyState title="暂无分析结果" desc="等待 collector-agent 写入或手动触发分析。" />
+          )}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TYPES.map((t) => {
-            const item = types[t.key]
-            const payload = item?.payload ? safeJson(item.payload) : null
-            const meta = CARD_META[t.key]
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TYPES.map((t) => {
+              const item = types[t.key]
+              const payload = item?.payload ? safeJson(item.payload) : null
+              const meta = CARD_META[t.key]
 
-            return (
-              <div key={t.key} className="rounded-xl border border-border bg-surface px-4 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-text">{t.label}</div>
-                  <Badge tone={item ? "success" : "warning"}>{item ? "已就绪" : meta.tone}</Badge>
+              return (
+                <div key={t.key} className="rounded-xl border border-border bg-surface px-4 py-4 transition hover:border-accent/60 hover:shadow-md">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-medium text-text">{t.label}</div>
+                    <Badge tone={item ? "success" : "warning"}>{item ? "已就绪" : meta.tone}</Badge>
+                  </div>
+
+                  <div className="mt-2 text-xs text-muted">{fmtDate(item?.generated_at)}</div>
+                  <div className="mt-1 text-xs text-muted">{item?.model || "模型：—"}</div>
+
+                  {!item && (
+                    <div className="mt-3 text-xs text-muted">{meta.empty}</div>
+                  )}
+
+                  {t.key === "market" && (
+                    <MarketBlock payload={payload} status={status} />
+                  )}
+                  {t.key === "recommendations" && payload && (
+                    <RecommendationsBlock payload={payload} />
+                  )}
+                  {t.key === "skill_gap" && payload && (
+                    <SkillGapBlock payload={payload} />
+                  )}
+                  {t.key === "roadmap" && payload && (
+                    <RoadmapBlock payload={payload} />
+                  )}
+                  {t.key === "report" && payload && (
+                    <ReportBlock payload={payload} />
+                  )}
                 </div>
-
-                <div className="mt-2 text-xs text-muted">{fmtDate(item?.generated_at)}</div>
-                <div className="mt-1 text-xs text-muted">{item?.model || "模型：—"}</div>
-
-                {!item && (
-                  <div className="mt-3 text-xs text-muted">{meta.empty}</div>
-                )}
-
-                {t.key === "market" && (
-                  <MarketBlock payload={payload} status={status} />
-                )}
-                {t.key === "recommendations" && payload && (
-                  <RecommendationsBlock payload={payload} />
-                )}
-                {t.key === "skill_gap" && payload && (
-                  <SkillGapBlock payload={payload} />
-                )}
-                {t.key === "roadmap" && payload && (
-                  <RoadmapBlock payload={payload} />
-                )}
-                {t.key === "report" && payload && (
-                  <ReportBlock payload={payload} />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </Section>
+              )
+            })}
+          </div>
+        </Section>
+      )}
     </div>
   )
 }

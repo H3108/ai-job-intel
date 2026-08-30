@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchJobs, fetchIntelligenceLatest, type JobsList } from "../api/client"
-import { Section, Badge, EmptyState, PageHeader, Input } from "../design-system"
+import { Section, Badge, EmptyState, PageHeader, Input, Button } from "../design-system"
 import { Link } from "react-router-dom"
 
 const PAGE = 20
@@ -115,23 +115,11 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="rounded-xl border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-text disabled:opacity-40"
-              >
-                上一页
-              </button>
+              <Button variant="secondary" size="sm" loading={page === 0} onClick={() => setPage((p: number) => Math.max(0, p - 1))}>上一页</Button>
               <div className="text-xs text-muted">
                 第 {page + 1} / {totalPages} 页
               </div>
-              <button
-                disabled={page + 1 >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                className="rounded-xl border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-text disabled:opacity-40"
-              >
-                下一页
-              </button>
+              <Button variant="secondary" size="sm" loading={page + 1 >= totalPages} onClick={() => setPage((p: number) => Math.min(totalPages - 1, p + 1))}>下一页</Button>
             </div>
           </>
         )}
