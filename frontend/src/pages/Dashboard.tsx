@@ -1,16 +1,42 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { fetchJobs, fetchIntelligenceLatest, type JobsList } from "../api/client"
+import { fetchJobs, fetchJobsStats, fetchIntelligenceLatest, type JobsList, type JobsStats, type IntelligenceLatest } from "../api/client"
 import { Section, Badge, EmptyState, PageHeader, Input, Button } from "../design-system"
 import { Link } from "react-router-dom"
 
 const PAGE = 20
 
+function fmtNum(n: number) {
+  if (n == null || Number.isNaN(n)) return "—"
+  return new Intl.NumberFormat("zh-CN").format(n)
+}
+
+function BarList({ items, accent }: { items: { label: string; value: number }[]; accent?: boolean }) {
+  if (!items.length) return <div className="text-xs text-muted">暂无数据</div>
+  const max = Math.max(...items.map((i) => i.value))
+  return (
+    <div className="mt-3 space-y-2">
+      {items.slice(0, 8).map((item) => {
+        const width = max > 0 ? Math.round((item.value / max) * 100) : 0
+        return (
+          <div key={item.label} className="flex items-center gap-3">
+            <div className="w-28 truncate text-xs text-text">{item.label}</div>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-solid">
+              <div className={`h-full rounded-full ${accent ? 'bg-accent/80' : 'bg-emerald-500/70'}`} style={{ width: `${width}%` }} />
+            </div>
+            <div className="w-14 text-right text-xs text-muted">{fmtNum(item.value)}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(0)
 
-  const intel = useQuery({ queryKey: ["intelligenceLatest"], queryFn: fetchIntelligenceLatest })
+  const intel = useQuery<IntelligenceLatest>({ queryKey: ["intelligenceLatest"], queryFn: fetchIntelligenceLatest })
   const jobsQuery = useQuery<JobsList>({
     queryKey: ["jobs", query, page],
     queryFn: () =>
@@ -20,6 +46,7 @@ export default function Dashboard() {
         offset: page * PAGE,
       }),
   })
+  const statsQuery = useQuery<JobsStats>({ queryKey: ["jobsStats"], queryFn: fetchJobsStats })
 
   const jobs = jobsQuery.data?.jobs ?? []
   const total = jobsQuery.data?.total ?? 0
@@ -46,6 +73,47 @@ export default function Dashboard() {
         }
       />
 
+      <Section title="市场统计" desc="基于当前岗位数据的概览统计。">
+        {statsQuery.isLoading && <EmptyState title="加载中" desc="正在读取统计信息…" />}
+        {statsQuery.isError && <div className="text-sm text-red-300">无法读取统计信息。</div>}
+        {statsQuery.data && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl bg-surface-solid px-4 py-3">
+              <div className="text-xs text-muted">岗位总量</div>
+              <div className="mt-1 text-lg font-semibold text-text">{fmtNum(statsQuery.data.total)}</div>
+            </div>
+            <div className="rounded-xl bg-surface-solid px-4 py-3">
+              <div className="text-xs text-muted">近 7 天</div>
+              <div className="mt-1 text-lg font-semibold text-text">{fmtNum(statsQuery.data.recent_7d)}</div>
+            </div>
+            <div className="rounded-xl bg-surface-solid px-4 py-3">
+              <div className="text-xs text-muted">近 30 天</div>
+              <div className="mt-1 text-lg font-semibold text-text">{fmtNum(statsQuery.data.recent_30d)}</div>
+            </div>
+            <div className="rounded-xl bg-surface-solid px-4 py-3">
+              <div className="text-xs text-muted">覆盖城市</div>
+              <div className="mt-1 text-lg font-semibold text-text">{fmtNum((statsQuery.data.cities || []).length)}</div>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      <Section title="城市分布" desc="按城市统计岗位数量。">
+        {statsQuery.isLoading ? (
+          <EmptyState title="加载中" desc="正在读取城市分布…" />
+        ) : (
+          <BarList accent items={(statsQuery.data?.cities || []).map((c) => ({ label: c.city, value: c.n }))} />
+        )}
+      </Section>
+
+      <Section title="岗位分布" desc="按职能/岗位标题统计。">
+        {statsQuery.isLoading ? (
+          <EmptyState title="加载中" desc="正在读取岗位分布…" />
+        ) : (
+          <BarList items={(statsQuery.data?.roles || []).map((r) => ({ label: r.role, value: r.n }))} />
+        )}
+      </Section>
+
       <Section
         title="AI 分析"
         desc={
@@ -61,6 +129,11 @@ export default function Dashboard() {
             </Badge>
             <span className="text-xs text-muted">{intel.data?.types?.market?.model || "模型：—"}</span>
           </div>
+          <Link to="/reports" className="no-underline">
+            <span className="inline-flex cursor-pointer inline-flex items-center justify-center rounded-xl border border-border px-3 py-2 text-xs text-text transition hover:border-accent/60">
+              前往智能分析
+            </span>
+          </Link>
         </div>
       </Section>
 

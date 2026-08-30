@@ -1,20 +1,29 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { fetchJobs, type JobsList } from "../api/client"
-import { Section, Badge, EmptyState, PageHeader, Input } from "../design-system"
+import { fetchJobs, fetchScopes, fetchJobsStats, type JobsList, type Scopes, type JobsStats } from "../api/client"
+import { Section, Badge, EmptyState, PageHeader, Input, Button, Select } from "../design-system"
 import { Link } from "react-router-dom"
 
 const PAGE = 20
 
+function fmtNum(n: number) {
+  if (n == null || Number.isNaN(n)) return "—"
+  return new Intl.NumberFormat("zh-CN").format(n)
+}
+
 export default function MarketPage() {
   const [query, setQuery] = useState("")
+  const [city, setCity] = useState("")
   const [page, setPage] = useState(0)
 
+  const scopes = useQuery<Scopes>({ queryKey: ["scopes"], queryFn: fetchScopes })
+  const stats = useQuery<JobsStats>({ queryKey: ["jobsStats"], queryFn: fetchJobsStats })
   const jobsQuery = useQuery<JobsList>({
-    queryKey: ["jobs", "market", query, page],
+    queryKey: ["jobs", "market", query, city, page],
     queryFn: () =>
       fetchJobs({
         q: query || undefined,
+        city: city || undefined,
         limit: PAGE,
         offset: page * PAGE,
       }),
@@ -24,6 +33,7 @@ export default function MarketPage() {
   const total = jobsQuery.data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE))
 
+  const cities = scopes.data?.cities ?? []
   const cityCount = new Map<string, number>()
   for (const job of jobs) {
     const c = job.city || "未知"
@@ -35,7 +45,7 @@ export default function MarketPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="岗位市场" desc="浏览最新公开岗位，支持关键词搜索。" />
+      <PageHeader title="岗位市场" desc="浏览最新公开岗位，支持关键词搜索与城市筛选。" />
 
       <Section title="筛选">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -61,16 +71,30 @@ export default function MarketPage() {
               <path d="M21 21l-4.35-4.35" />
             </svg>
           </div>
+          <div className="sm:w-56">
+            <Select value={city} onChange={(e) => { setCity(e.target.value); setPage(0) }} className="w-full">
+              <option value="">全部城市</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </Select>
+          </div>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
           <span className="text-text">热门城市：</span>
           {hotCities.length === 0 && <span>加载中...</span>}
-          {hotCities.map(([city, count]) => (
-            <Badge key={city} tone="secondary">
-              {city} {count}
+          {hotCities.map(([c, count]) => (
+            <Badge key={c} tone="secondary">
+              {c} {fmtNum(count)}
             </Badge>
           ))}
+          {stats.data && (
+            <>
+              <span className="ml-auto text-text">总岗位：{fmtNum(stats.data.total)}</span>
+              <span>近 7 天：{fmtNum(stats.data.recent_7d)}</span>
+            </>
+          )}
         </div>
       </Section>
 
@@ -78,7 +102,7 @@ export default function MarketPage() {
         {jobsQuery.isLoading ? (
           <EmptyState title="加载中" desc="正在读取岗位列表…" />
         ) : jobs.length === 0 ? (
-          <EmptyState title="暂无结果" desc="请调整搜索词。" />
+          <EmptyState title="暂无结果" desc="请调整搜索词或城市筛选。" />
         ) : (
           <>
             <div className="mt-4 grid gap-3">
@@ -100,23 +124,11 @@ export default function MarketPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p: number) => Math.max(0, p - 1))}
-                className="rounded-xl border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-text disabled:opacity-40"
-              >
-                上一页
-              </button>
+              <Button variant="secondary" size="sm" loading={page === 0} onClick={() => setPage((p: number) => Math.max(0, p - 1))}>上一页</Button>
               <div className="text-xs text-muted">
                 第 {page + 1} / {totalPages} 页
               </div>
-              <button
-                disabled={page + 1 >= totalPages}
-                onClick={() => setPage((p: number) => Math.min(totalPages - 1, p + 1))}
-                className="rounded-xl border border-border px-3 py-2 text-sm text-muted transition-colors hover:text-text disabled:opacity-40"
-              >
-                下一页
-              </button>
+              <Button variant="secondary" size="sm" loading={page + 1 >= totalPages} onClick={() => setPage((p: number) => Math.min(totalPages - 1, p + 1))}>下一页</Button>
             </div>
           </>
         )}
