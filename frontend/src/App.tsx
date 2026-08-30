@@ -1,5 +1,5 @@
-import { lazy } from "react"
-import { Routes, Route } from "react-router-dom"
+import { lazy, Suspense } from "react"
+import { Routes, Route, useNavigate } from "react-router-dom"
 
 const Dashboard = lazy(() => import("./pages/Dashboard"))
 const MarketPage = lazy(() => import("./pages/MarketPage"))
@@ -17,7 +17,8 @@ const NAV = [
   { to: "/reports", label: "智能分析", icon: "🧠" },
 ]
 
-export default function App() {
+function AppShell() {
+  const navigate = useNavigate()
   return (
     <div className="min-h-screen bg-bg text-text">
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
@@ -31,33 +32,30 @@ export default function App() {
           </div>
           <nav className="flex items-center gap-1">
             {NAV.map((item) => (
-              <a
+              <button
                 key={item.to}
-                href={item.to}
+                onClick={() => navigate(item.to)}
                 className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
-                onClick={(e) => {
-                  e.preventDefault()
-                  window.history.pushState({}, "", item.to)
-                  window.dispatchEvent(new PopStateEvent("popstate"))
-                }}
               >
                 {item.label}
-              </a>
+              </button>
             ))}
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/market" element={<MarketPage />} />
-          <Route path="/jobs/:id" element={<JobDetailPage />} />
-          <Route path="/profile" element={<PersonaPage />} />
-          <Route path="/roadmap" element={<RoadmapPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<div className="text-sm text-muted">加载中…</div>}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/market" element={<MarketPage />} />
+            <Route path="/jobs/:id" element={<JobDetailPage />} />
+            <Route path="/profile" element={<PersonaPage />} />
+            <Route path="/roadmap" element={<RoadmapPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <footer className="border-t border-border py-8">
@@ -68,3 +66,5 @@ export default function App() {
     </div>
   )
 }
+
+export default AppShell
