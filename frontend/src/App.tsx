@@ -1,6 +1,5 @@
 import { lazy } from "react"
-import { Routes, Route, NavLink, useLocation } from "react-router-dom"
-import { cn } from "./lib/cn"
+import { Routes, Route } from "react-router-dom"
 
 const Dashboard = lazy(() => import("./pages/Dashboard"))
 const MarketPage = lazy(() => import("./pages/MarketPage"))
@@ -19,7 +18,6 @@ const NAV = [
 ]
 
 export default function App() {
-  const location = useLocation()
   return (
     <div className="min-h-screen bg-bg text-text">
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
@@ -33,26 +31,25 @@ export default function App() {
           </div>
           <nav className="flex items-center gap-1">
             {NAV.map((item) => (
-              <NavLink
+              <a
                 key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    "rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    isActive ? "bg-surface-solid text-text" : "text-muted hover:text-text",
-                  )
-                }
+                href={item.to}
+                className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+                onClick={(e) => {
+                  e.preventDefault()
+                  window.history.pushState({}, "", item.to)
+                  window.dispatchEvent(new PopStateEvent("popstate"))
+                }}
               >
                 {item.label}
-              </NavLink>
+              </a>
             ))}
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Routes location={location}>
+        <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/market" element={<MarketPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
