@@ -395,6 +395,29 @@ app.get('/api/intelligence/reports/:id', (req, res) => {
   }
 })
 
+// Intelligence write (Hush AI OS only)
+app.post('/api/intelligence/write', express.json({ type: 'json' }), (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {}
+    const { id, type, profile_id = 'me', profile_version = 'v1', payload, markdown, analysis_type = 'full', analysis_version = 'v1', model, expires_at, producer = 'hush-ai-os' } = body
+    if (!id || !type || !payload) {
+      return res.status(400).json({ ok: false, error: 'missing required fields: id, type, payload' })
+    }
+    if (!['market', 'recommendations', 'skill_gap', 'roadmap', 'report'].includes(type)) {
+      return res.status(400).json({ ok: false, error: `invalid type: ${type}` })
+    }
+    const now = new Date().toISOString()
+    db.prepare(`INSERT OR REPLACE INTO intelligence_cache (id, type, profile_id, profile_version, payload, markdown, analysis_type, analysis_version, model, generated_at, expires_at, producer)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      String(id), String(type), String(profile_id), String(profile_version), JSON.stringify(payload), markdown ? String(markdown) : null,
+      String(analysis_type), String(analysis_version), model ? String(model) : null, now, expires_at ? String(expires_at) : null, String(producer)
+    )
+    res.json({ ok: true, id, type, generated_at: now })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
 const PORT = process.env.PORT || 3001
 const HOST = process.env.HOST || 'localhost'
 app.listen(PORT, HOST, () => {
