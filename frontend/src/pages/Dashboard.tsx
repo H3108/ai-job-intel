@@ -45,7 +45,7 @@ export default function Dashboard() {
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile })
 
   const jobsQuery = useQuery<JobsList>({
-    queryKey: ["jobs", status, sortBy, page],
+    queryKey: ["jobs", query, status, sortBy, page],
     queryFn: () =>
       fetchJobs({
         q: query || undefined,
@@ -54,11 +54,22 @@ export default function Dashboard() {
       }),
   })
 
+  const sorted = useMemo(() => {
+    const src = (jobsQuery.data?.jobs ?? []).slice()
+    if (sortBy === "title") {
+      src.sort((a, b) => (a.title || "").localeCompare(b.title || ""))
+    } else if (sortBy === "oldest") {
+      src.sort((a, b) => (a.posted_at || "").localeCompare(b.posted_at || ""))
+    } else {
+      src.sort((a, b) => (b.posted_at || "").localeCompare(a.posted_at || ""))
+    }
+    return src
+  }, [jobsQuery.data?.jobs, sortBy])
+
   const filtered = useMemo(() => {
-    const src = jobsQuery.data?.jobs ?? []
-    if (status === "all") return src
-    return src.filter((j) => j.status === status)
-  }, [jobsQuery.data?.jobs, status])
+    if (status === "all") return sorted
+    return sorted.filter((j) => j.status === status)
+  }, [sorted, status])
 
   const total = jobsQuery.data?.total ?? 0
   const loading = jobsQuery.isLoading
@@ -86,6 +97,9 @@ export default function Dashboard() {
             </Button>
             <Button asChild variant="secondary">
               <Link to="/profile">我的画像</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/reports">智能分析</Link>
             </Button>
           </div>
         }
@@ -117,7 +131,7 @@ export default function Dashboard() {
           </div>
         </Section>
 
-        <Section title="目标城市" topSpace>
+        <Section title="热门城市" topSpace>
           <div className="flex flex-wrap gap-2">
             {cities.map((c: { city: string; n: number }) => (
               <Badge key={c.city} tone="primary">

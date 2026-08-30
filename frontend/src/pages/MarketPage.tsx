@@ -1,26 +1,19 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchJobs, fetchScopes, type JobsList, type Scopes } from "../api/client"
-import {
-  Section,
-  Alert,
-  Input,
-  Select,
-  Skeleton,
-  EmptyState,
-  PageHeader,
-  Badge,
-  Button,
-} from "../design-system"
+import { Section, Alert, Input, Select, Skeleton, EmptyState, PageHeader, Badge, Button } from "../design-system"
+import { Link } from "react-router-dom"
 import { friendlyError } from "../lib/errorMessage"
 
 const PAGE = 20
+
 export default function MarketPage() {
   const [q, setQ] = useState("")
+  const [role, setRole] = useState("all")
   const [page, setPage] = useState(0)
   const scopesQuery = useQuery<Scopes>({ queryKey: ["scopes"], queryFn: fetchScopes })
   const jobsQuery = useQuery<JobsList>({
-    queryKey: ["marketJobs", q, page],
+    queryKey: ["marketJobs", q, role, page],
     queryFn: () => fetchJobs({ q: q || undefined, limit: PAGE, offset: page * PAGE }),
   })
   const total = jobsQuery.data?.total ?? 0
@@ -57,8 +50,11 @@ export default function MarketPage() {
             className="sm:w-64"
           />
           <Select
-            value={scopesQuery.data?.roles?.[0] || "all"}
-            onChange={() => {}}
+            value={role}
+            onChange={(e) => {
+              setRole(e.target.value)
+              setPage(0)
+            }}
             className="sm:w-48"
           >
             <option value="all">全部职能</option>
@@ -68,6 +64,9 @@ export default function MarketPage() {
               </option>
             ))}
           </Select>
+          <Button asChild variant="secondary">
+            <Link to="/">返回概览</Link>
+          </Button>
         </div>
       </Section>
 
@@ -97,9 +96,10 @@ export default function MarketPage() {
 
         <div className="grid gap-3">
           {jobs.map((job) => (
-            <div
+            <Link
               key={job.id}
-              className="rounded-2xl border border-border bg-surface px-4 py-3"
+              to={`/jobs/${encodeURIComponent(job.id)}`}
+              className="block rounded-2xl border border-border bg-surface px-4 py-3 transition hover:border-accent"
             >
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div className="font-medium text-text">{job.title || "未命名岗位"}</div>
@@ -110,7 +110,7 @@ export default function MarketPage() {
                 {job.company && job.city ? " · " : ""}
                 {job.city || ""}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

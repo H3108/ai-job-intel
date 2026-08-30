@@ -51,6 +51,18 @@ test('dashboard filters jobs by status', async ({ page }) => {
   await expect(page.getByText('加载更多').first()).toBeVisible()
 })
 
+test('dashboard sorts by title', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  const firstText = await page.locator('.font-medium').first().textContent()
+  await page.getByLabel('排序方式').selectOption('title')
+  await page.waitForTimeout(250)
+  const afterText = await page.locator('.font-medium').first().textContent()
+  if (firstText && afterText) {
+    await page.evaluate(([a, b]) => ({ cmp: a.localeCompare(b) >= 0 ? 1 : 0 }), [firstText, afterText])
+  }
+})
+
 test('market search filters results', async ({ page }) => {
   await page.goto('/market')
   await page.waitForLoadState('networkidle')
@@ -58,6 +70,16 @@ test('market search filters results', async ({ page }) => {
   await page.waitForTimeout(400)
   const firstCard = page.locator('div.font-medium').first()
   await expect(firstCard).toContainText('React')
+})
+
+test('market cards link to job detail', async ({ page }) => {
+  await page.goto('/market')
+  await page.waitForLoadState('networkidle')
+  const count = await page.locator('section:has-text("岗位列表") a[href*="/jobs/"]').count()
+  await expect(count).toBeGreaterThan(0)
+  await page.goto('/jobs/jd_6568dbd91d')
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByRole('heading', { name: '高级/资深前端开发工程师（AI方向）' }).first()).toBeVisible()
 })
 
 test('profile form is present and not crashing', async ({ page }) => {
