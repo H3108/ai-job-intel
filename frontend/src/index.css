@@ -9,14 +9,16 @@
     --surface-solid: #1A1B20;
     --text: #E9ECF1;
     --muted: #8B8F9A;
-    --accent: #D97706;
-    --accent-hover: #B45309;
+    --accent: #0891B2;
+    --accent-hover: #0e7490;
     --border: #23252B;
     --success: #22C55E;
     --warning: #F59E0B;
     --danger: #EF4444;
+    --primary: #7C3AED;
+    --primary-soft: rgba(124,58,237,0.15);
     --font-heading: 'Fira Code', 'Geist Mono', ui-monospace, monospace;
-    --font-body: 'Fira Sans', 'Geist', system-ui, -apple-system, sans-serif;
+    --font-body: 'Inter', 'Fira Sans', 'Geist', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -31,8 +33,10 @@
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ::selection { background: rgba(124,58,237,0.35); color: #fff; }
 }
 
 @layer components {
@@ -42,4 +46,27 @@
   .text-text { color: var(--text); }
   .text-muted { color: var(--muted); }
   .border-border { border-color: var(--border); }
+  .bg-accent { background: var(--accent); }
+  .hover\:bg-accent-hover:hover { background: var(--accent-hover); }
+  .text-accent { color: var(--accent); }
+  .bg-primary-soft { background: var(--primary-soft); }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out both;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.35s ease-out both;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
