@@ -8,6 +8,7 @@ const JobDetailPage = lazy(() => import("./pages/JobDetailPage"))
 const PersonaPage = lazy(() => import("./pages/PersonaPage"))
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage"))
 const ReportsPage = lazy(() => import("./pages/ReportsPage"))
+const SavedJobsPage = lazy(() => import("./pages/SavedJobsPage"))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"))
 
 function IconChart(props: React.SVGProps<SVGSVGElement>) {
@@ -105,6 +106,7 @@ function AppShell() {
               <Route path="/profile" element={<PersonaPage />} />
               <Route path="/roadmap" element={<RoadmapPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/saved" element={<SavedJobsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

@@ -451,6 +451,47 @@ app.post('/api/intelligence/trigger', async (req, res) => {
 
 const PORT = process.env.PORT || 3001
 const HOST = process.env.HOST || 'localhost'
+
+// Saved jobs
+const bookmarksPath = join(dataDir, 'bookmarks.json')
+const bookmarksDb = join(dataDir, 'bookmarks.db')
+const bDb = new DatabaseSync(bookmarksDb)
+bDb.exec(`CREATE TABLE IF NOT EXISTS bookmarks (id TEXT PRIMARY KEY, job_id TEXT NOT NULL, created_at TEXT NOT NULL)`)
+
+function readBookmarks() {
+  try { return JSON.parse(readFileSync(bookmarksPath, 'utf-8') || '[]') } catch { return [] }
+}
+
+function writeBookmarks(items) {
+  try { writeFileSync(bookmarksPath, JSON.stringify(items, null, 2), 'utf-8') } catch {}
+}
+
+app.get('/api/saved', (_req, res) => {
+  try {
+    const rows = bDb.prepare('SELECT job_id, created_at FROM bookmarks ORDER BY created_at DESC').all()
+    const saved = rows.map(r => r.job_id)
+    const jobs = saved.length ? db.prepare(`SELECT * FROM jobs WHERE id IN (${saved.map(() => '?').join(',')})`).all(...saved) : []
+    res.json({ ok: true, total: jobs.length, jobs })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
+app.post('/api/saved/:jobId', (req, res) => {
+  try {
+    const jobId = String(req.params.jobId)
+    const exists = bDb.prepare('SELECT id FROM bookmarks WHERE job_id = ?').get(jobId)
+    if (exists) {
+      bDb.prepare('DELETE FROM bookmarks WHERE job_id = ?').run(jobId)
+      return res.json({ ok: true, saved: false })
+    }
+    bDb.prepare('INSERT INTO bookmarks (id, job_id, created_at) VALUES (?, ?, ?)').run(randomUUID().slice(0, 8), jobId, new Date().toISOString())
+    res.json({ ok: true, saved: true })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
 app.listen(PORT, HOST, () => {
   console.log(`[backend] listening on http://${HOST}:${PORT}`)
   console.log(`[backend] sqlite: ${dbPath}`)
