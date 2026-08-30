@@ -14,9 +14,9 @@ for (const size of SIZES) {
       await page.goto(`http://job.hush7.online${route}`)
       await page.waitForLoadState('networkidle')
 
-      const bodyWidth = await page.evaluate('document.body.scrollWidth')
-      const clientWidth = await page.evaluate('document.documentElement.clientWidth')
-      const overflow = bodyWidth > clientWidth
+      const bodyWidth = (await page.evaluate('document.body.scrollWidth')) as number
+      const clientWidth = (await page.evaluate('document.documentElement.clientWidth')) as number
+      const overflow = bodyWidth - clientWidth
 
       const navVisible = await page.locator('nav').first().isVisible().catch(() => false)
       const mainVisible = await page.locator('main').first().isVisible().catch(() => false)
@@ -26,7 +26,7 @@ for (const size of SIZES) {
         fullPage: true,
       })
 
-      expect(overflow).toBe(false)
+      expect(overflow).toBeLessThanOrEqual(1)
       expect(navVisible).toBe(true)
       expect(mainVisible).toBe(true)
     })

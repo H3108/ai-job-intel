@@ -89,11 +89,11 @@ export default function PersonaPage() {
       )}
 
       <Section title="目标方向" desc="选择你期望的岗位与城市，系统将据此生成推荐与学习路线。">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">
+        <div className="grid gap-4 sm:grid-cols-2 min-w-0 overflow-hidden">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">目标岗位</span>
             <select
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.target_role}
               onChange={(e) => setForm((s) => ({ ...s, target_role: e.target.value }))}
             >
@@ -103,10 +103,10 @@ export default function PersonaPage() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">目标城市</span>
             <select
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.target_city}
               onChange={(e) => setForm((s) => ({ ...s, target_city: e.target.value }))}
             >
@@ -120,47 +120,47 @@ export default function PersonaPage() {
       </Section>
 
       <Section title="当前背景" desc="填写你目前的岗位、城市、经验与技能，便于精准计算技能差距。">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">
+        <div className="grid gap-4 sm:grid-cols-2 min-w-0 overflow-hidden">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">当前岗位</span>
             <input
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.current_title}
               onChange={(e) => setForm((s) => ({ ...s, current_title: e.target.value }))}
               placeholder="如：前端工程师"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">当前城市</span>
             <input
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.current_city}
               onChange={(e) => setForm((s) => ({ ...s, current_city: e.target.value }))}
               placeholder="如：深圳"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">工作经验</span>
             <input
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.total_experience}
               onChange={(e) => setForm((s) => ({ ...s, total_experience: e.target.value }))}
               placeholder="如：3 年"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm min-w-0">
             <span className="text-muted">学历</span>
             <input
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               value={form.education}
               onChange={(e) => setForm((s) => ({ ...s, education: e.target.value }))}
               placeholder="如：本科"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2 min-w-0">
             <span className="text-muted">当前技能</span>
             <textarea
-              className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               rows={3}
               value={form.current_skills}
               onChange={(e) => setForm((s) => ({ ...s, current_skills: e.target.value }))}
