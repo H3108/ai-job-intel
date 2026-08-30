@@ -93,7 +93,7 @@ app.get('/api/jobs', (req, res) => {
   }
 })
 
-app.get('/api/jobs/search', (req, res) => {
+app.get('/api/jobs/search/jobs', (req, res) => {
   try {
     const q = String(req.query.q || '').trim()
     if (!q) return res.status(400).json({ ok: false, error: 'missing q' })
