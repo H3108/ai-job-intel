@@ -10,10 +10,10 @@ const RoadmapPage = lazy(() => import("./pages/RoadmapPage"))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"))
 
 const NAV = [
-  { to: "/", label: "市场概览", end: true },
-  { to: "/market", label: "岗位市场" },
-  { to: "/profile", label: "我的画像" },
-  { to: "/roadmap", label: "学习路线" },
+  { to: "/", label: "市场概览", end: true, icon: "📊" },
+  { to: "/market", label: "岗位市场", icon: "🔍" },
+  { to: "/profile", label: "我的画像", icon: "👤" },
+  { to: "/roadmap", label: "学习路线", icon: "📚" },
 ]
 
 export default function App() {
@@ -23,7 +23,7 @@ export default function App() {
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-accent/20 text-accent">JI</div>
+            <div className="h-8 w-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center font-display font-bold text-sm">JI</div>
             <div>
               <div className="font-display text-sm font-semibold leading-tight">JobIntel</div>
               <div className="text-xs text-muted">AI 求职情报</div>
