@@ -9,19 +9,11 @@ import ErrorBoundary from "./ErrorBoundary"
 
 // P2：五页改为动态导入 → 自动代码分割（每页独立 chunk，首屏只加载外壳 + 当前路由）。
 const Dashboard = lazy(() => import("../pages/Dashboard"))
-const GapPage = lazy(() => import("../pages/GapPage"))
-const RoadmapPage = lazy(() => import("../pages/RoadmapPage"))
-const ClustersPage = lazy(() => import("../pages/ClustersPage"))
-const DataPage = lazy(() => import("../pages/DataPage"))
-const DataSchedulePage = lazy(() => import("../pages/DataSchedulePage"))
-const PersonaPage = lazy(() => import("../pages/PersonaPage"))
-const RoleComparePage = lazy(() => import("../pages/RoleComparePage"))
-const SalaryAuditPage = lazy(() => import("../pages/SalaryAuditPage"))
-const RoleDetailPage = lazy(() => import("../pages/RoleDetailPage"))
-const JobsPage = lazy(() => import("../pages/JobsPage"))
 const MarketPage = lazy(() => import("../pages/MarketPage"))
-const AnalysisShowcasePage = lazy(() => import("../pages/AnalysisShowcasePage"))
-const DesignSystemShowcase = lazy(() => import("../design-system/Showcase"))
+const JobsPage = lazy(() => import("../pages/JobsPage"))
+const RoleComparePage = lazy(() => import("../pages/RoleComparePage"))
+const RoleDetailPage = lazy(() => import("../pages/RoleDetailPage"))
+const PersonaPage = lazy(() => import("../pages/PersonaPage"))
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"))
 
 const NAV_GROUPS = [
@@ -259,20 +251,12 @@ export default function AppShell() {
               <ErrorBoundary>
                 <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/gap" element={<GapPage />} />
-                <Route path="/roadmap" element={<RoadmapPage />} />
-                <Route path="/clusters" element={<ClustersPage />} />
-                <Route path="/data" element={<DataPage />} />
-                <Route path="/data-schedule" element={<DataSchedulePage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/:id" element={<JobsPage />} />
                 <Route path="/market" element={<MarketPage />} />
                 <Route path="/compare" element={<RoleComparePage />} />
-                <Route path="/salary-audit" element={<SalaryAuditPage />} />
                 <Route path="/role-detail" element={<RoleDetailPage />} />
-                <Route path="/analysis-showcase" element={<AnalysisShowcasePage />} />
                 <Route path="/persona" element={<PersonaPage />} />
-                <Route path="/design-system" element={<DesignSystemShowcase />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
               </ErrorBoundary>
