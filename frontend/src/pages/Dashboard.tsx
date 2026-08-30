@@ -1,15 +1,30 @@
 import { useMemo, useRef, useState } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useQuery } from "@tanstack/react-query"
-import { fetchJobs, fetchHealth, type JobsList, type Health } from "../api/client"
+import {
+  fetchJobs,
+  fetchHealth,
+  fetchSalaryAudit,
+  type JobsList,
+  type Health,
+} from "../api/client"
 import { useAnalytics, useScope } from "../api/useAnalytics"
 import { cn } from "../lib/cn"
-import { Section, Alert, Input, Select, Skeleton, EmptyState, PageHeader } from "../design-system"
+import {
+  Section,
+  Alert,
+  Input,
+  Select,
+  Skeleton,
+  EmptyState,
+  PageHeader,
+  Badge,
+  Button,
+} from "../design-system"
+import { Link } from "react-router-dom"
 import { friendlyError } from "../lib/errorMessage"
 import JobCard from "../components/JobCard"
 import ImportPanel from "../components/ImportPanel"
-import AnalyticsPanel from "../components/AnalyticsPanel"
-import CapabilityHero from "../components/CapabilityHero"
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "全部状态" },
@@ -30,43 +45,51 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "status", label: "按状态" },
 ]
 
+function fmtTime(s: string) {
+  try {
+    return new Date(s.replace(" ", "T") + "Z").toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  } catch {
+    return s
+  }
+}
+
+function pct(n: number, total: number) {
+  if (total <= 0) return "0%"
+  return `${Math.round((n / total) * 100)}%`
+}
+
 export default function Dashboard() {
-  // 方案 C：岗位列表按当前 URL 作用域（?role=&city=）过滤，和分析看板保持一致。
   const scope = useScope()
-  // P1-1：分析数据自行按 scope 取数（无需等待 AppShell 全局 gate；无关页面不再被阻塞）。
-  const { data: analytics, isError: analyticsError, error: analyticsErr } = useAnalytics(scope)
+  const analyticsQuery = useAnalytics(scope)
   const jobsQuery = useQuery<JobsList>({ queryKey: ["jobs", scope], queryFn: () => fetchJobs(scope) })
+  const healthQuery = useQuery<Health>({ queryKey: ["health"], queryFn: fetchHealth })
+  const salaryQuery = useQuery({ queryKey: ["salary-audit"], queryFn: fetchSalaryAudit })
 
   const jobs = jobsQuery.data?.jobs ?? []
+  const total = jobsQuery.data?.total ?? 0
   const loading = jobsQuery.isLoading
   const error = jobsQuery.error ? String(jobsQuery.error) : null
-
-  // 采集健康度（看板状态灯）：从 /api/health 派生风控/异常/薪资解密成功率。
-  const healthQuery = useQuery<Health>({ queryKey: ["health"], queryFn: fetchHealth })
   const health = healthQuery.data ?? null
-  const fmtTime = (s: string) => {
-    try {
-      return new Date(s.replace(" ", "T") + "Z").toLocaleString("zh-CN", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    } catch {
-      return s
-    }
-  }
+  const analytics = analyticsQuery.data ?? null
+
+  const analyzed = jobs.filter((j) => j.status && j.status !== "collected").length
 
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState("all")
   const [sortBy, setSortBy] = useState("recent")
 
-  const analyzed = jobs.filter((j) => j.status && j.status !== "collected").length
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const list = jobs.filter((j) => {
-      const matchQ = !q || j.title.toLowerCase().includes(q) || (j.company || "").toLowerCase().includes(q)
+      const matchQ =
+        !q ||
+        j.title.toLowerCase().includes(q) ||
+        (j.company || "").toLowerCase().includes(q)
       const matchS = status === "all" || (j.status || "collected") === status
       return matchQ && matchS
     })
@@ -93,30 +116,37 @@ export default function Dashboard() {
     overscan: 6,
   })
 
+  const salary = salaryQuery.data?.summary
+  const marketLabel = scope.role || scope.city ? `/${scope.city ?? "全部"} · ${scope.role ?? "全部"}` : "/market"
+
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <PageHeader
         title={<span className="brand-shimmer">AI 求职情报系统</span>}
-        desc={`${[scope.city ? scope.city + ' AI 岗' : 'AI 岗', scope.role].filter(Boolean).join(' · ')} · 能力模型 · 学习路线`}
+        desc={`${[scope.city ? scope.city + " AI 岗" : "AI 岗", scope.role].filter(Boolean).join(" · ")} · 能力模型 · 学习路线`}
       />
 
-      {/* P3 记忆点：英雄区能力图谱 + 动态数字（替换原概览统计） */}
-      {analytics && <CapabilityHero analytics={analytics} jobCount={jobs.length} analyzedCount={analyzed} />}
-
-      {/* 采集健康度状态（v2.3：扁平内联状态行；warn 用 accent 绿主体 + 琥珀角标暗示警示，整体融入黑绿主题） */}
       {health && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
           <span
             className={cn(
               "inline-flex items-center gap-2 font-medium",
-              health.status === "ok" ? "text-success-fg" : health.status === "warn" ? "text-accent" : "text-muted",
+              health.status === "ok"
+                ? "text-success-fg"
+                : health.status === "warn"
+                  ? "text-accent"
+                  : "text-muted",
             )}
           >
             <span
               aria-hidden="true"
               className={cn(
                 "relative inline-flex h-2.5 w-2.5 rounded-full",
-                health.status === "ok" ? "bg-success" : health.status === "warn" ? "bg-accent" : "bg-muted",
+                health.status === "ok"
+                  ? "bg-success"
+                  : health.status === "warn"
+                    ? "bg-accent"
+                    : "bg-muted",
               )}
             >
               {health.status === "warn" && (
@@ -145,31 +175,68 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 错误条：仅提示，不清空已有列表（react-query 保留上一次成功数据） */}
+      {analytics && (
+        <Section title="能力总览" desc="技能优先级、岗位方向、经验与学历分布，全部基于已分析样本实时生成。">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="text-xs text-muted">总岗位</div>
+                  <div className="font-display text-2xl font-semibold text-text">{total}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="text-xs text-muted">已分析</div>
+                  <div className="font-display text-2xl font-semibold text-text">{analyzed}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="text-xs text-muted">分析覆盖率</div>
+                  <div className="font-display text-2xl font-semibold text-text">{pct(analyzed, total || 1)}</div>
+                </div>
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="text-xs text-muted">已解密薪资</div>
+                  <div className="font-display text-2xl font-semibold text-text">
+                    {salary?.decoded ?? "—"}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl border border-border bg-surface p-4">
+                <div className="text-sm font-semibold text-text">推荐下一步</div>
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
+                  <Badge tone="neutral">补抓 detail 页生成 raw</Badge>
+                  <Badge tone="neutral">跑一轮真实 LLM analyze</Badge>
+                  <Badge tone="neutral">核对登录态与城市矩阵</Badge>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-surface p-4">
+              <div className="text-sm font-semibold text-text">当前薪资区间</div>
+              <div className="mt-3 space-y-2 text-sm text-muted">
+                <div>红区(低置信) <b className="text-text">{salary?.lowConfRed ?? 0}</b></div>
+                <div>黄区(低置信) <b className="text-text">{salary?.lowConfYellow ?? 0}</b></div>
+                <div>中位置信 <b className="text-text">{salary?.medianConfidence != null ? Math.round(salary.medianConfidence * 100) + "%" : "—"}</b></div>
+              </div>
+              <div className="mt-4">
+                <Link to={marketLabel} className="mt-4 block">
+                  <Button variant="secondary" className="w-full">
+                    进入岗位市场
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Section>
+      )}
+
       {error && (
         <Alert tone="danger" title="接口异常">
           {friendlyError(error)}
         </Alert>
       )}
 
-      {/* 分析数据错误（不影响岗位列表与采集健康度） */}
-      {analyticsError && (
+      {analyticsQuery.isError && (
         <Alert tone="warning" title="分析数据加载失败">
-          {friendlyError(analyticsErr)}
+          {friendlyError(analyticsQuery.error)}
         </Alert>
-      )}
-
-      {/* 刷新态（非首屏加载，保留列表） */}
-      {jobsQuery.isFetching && !loading && (
-        <p className="sr-only" role="status" aria-live="polite">
-          更新岗位数据中…
-        </p>
-      )}
-
-      {analytics && (
-        <Section title="能力分析" desc="技能优先级、岗位方向、经验与学历分布，全部基于已分析样本实时生成。">
-          <AnalyticsPanel data={analytics} />
-        </Section>
       )}
 
       <ImportPanel onImported={() => jobsQuery.refetch()} />
@@ -183,7 +250,6 @@ export default function Dashboard() {
           </span>
         }
       >
-        {/* 搜索 / 筛选 / 排序 工具栏 */}
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Input
             type="search"
@@ -225,7 +291,7 @@ export default function Dashboard() {
         )}
 
         {!loading && !error && jobs.length === 0 && (
-          <EmptyState title="暂无岗位数据" desc="用上方「手动导入」或 Phase 1 爬虫采集。" />
+          <EmptyState title="暂无岗位数据" desc="用上方「手动导入」或采集器抓取。" />
         )}
 
         {!loading && jobs.length > 0 && filtered.length === 0 && (
