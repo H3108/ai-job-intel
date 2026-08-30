@@ -1,7 +1,8 @@
 import { useMemo } from "react"
 import { useParams, Link } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchJob, fetchJobs, type JobsList } from "../api/client"
+import { fetchSaved, toggleSaved } from "../api/saved"
 import { Section, Badge, Alert, PageHeader, Button, Skeleton, EmptyState } from "../design-system"
 import { friendlyError } from "../lib/errorMessage"
 
@@ -32,12 +33,24 @@ function SkillList({ skills }: { skills: string[] }) {
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const qc = useQueryClient()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["job", id],
     queryFn: () => fetchJob(id as string),
     enabled: !!id,
   })
+  const saveQuery = useQuery({
+    queryKey: ["saved"],
+    queryFn: fetchSaved,
+    enabled: !!id,
+  })
+  const saveMutation = useMutation({
+    mutationFn: toggleSaved,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["saved"] }),
+  })
+
   const job: any = data
+  const saved = (saveQuery.data?.jobs ?? []).some((j: any) => j.id === id)
   const skills = useMemo(() => {
     const src = job?.skills || []
     return src.map((s: any) => (typeof s === "string" ? s : s.skill)).filter(Boolean)
@@ -57,9 +70,18 @@ export default function JobDetailPage() {
       <PageHeader
         title={job?.title || "岗位详情"}
         actions={
-          <Link to="/market">
-            <Button variant="secondary">返回市场</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={saved ? "primary" : "secondary"}
+              loading={saveMutation.isPending}
+              onClick={() => saveMutation.mutate(id as string)}
+            >
+              {saved ? "已收藏" : "收藏岗位"}
+            </Button>
+            <Link to="/market">
+              <Button variant="secondary">返回市场</Button>
+            </Link>
+          </div>
         }
       />
 
