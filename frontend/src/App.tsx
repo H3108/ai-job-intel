@@ -7,6 +7,7 @@ const MarketPage = lazy(() => import("./pages/MarketPage"))
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage"))
 const PersonaPage = lazy(() => import("./pages/PersonaPage"))
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage"))
+const ReportsPage = lazy(() => import("./pages/ReportsPage"))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"))
 
 const NAV = [
@@ -14,6 +15,7 @@ const NAV = [
   { to: "/market", label: "岗位市场", icon: "🔍" },
   { to: "/profile", label: "我的画像", icon: "👤" },
   { to: "/roadmap", label: "学习路线", icon: "📚" },
+  { to: "/reports", label: "智能分析", icon: "🧠" },
 ]
 
 export default function App() {
@@ -56,6 +58,7 @@ export default function App() {
           <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="/profile" element={<PersonaPage />} />
           <Route path="/roadmap" element={<RoadmapPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

@@ -36,3 +36,12 @@ test('roadmap page loads', async ({ page }) => {
   await page.goto('/roadmap')
   await expect(page.getByRole('heading', { name: '学习路线' })).toBeVisible()
 })
+
+test('reports page loads', async ({ page }) => {
+  await page.goto('/reports')
+  await page.waitForLoadState('networkidle')
+  const main = page.getByRole('main')
+  await expect(main.getByText('智能分析').first()).toBeVisible()
+  await expect(main.getByText('市场分析', { exact: true })).toBeVisible()
+  await expect(main.getByText('综合报告', { exact: true })).toBeVisible()
+})
