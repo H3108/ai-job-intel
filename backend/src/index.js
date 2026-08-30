@@ -125,6 +125,16 @@ app.get('/api/jobs/stats', (_req, res) => {
   }
 })
 
+app.get('/api/jobs/:id', (req, res) => {
+  try {
+    const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(req.params.id)
+    if (!job) return res.status(404).json({ ok: false, error: 'job not found' })
+    res.json({ ok: true, job })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
 
 app.get('/api/scopes', (_req, res) => {
   try {
