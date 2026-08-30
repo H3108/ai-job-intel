@@ -1019,6 +1019,36 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     }
     console.log(`[analyze] 策略 A 完成：成功 ${ok} / 失败 ${fail} / 共 ${pending.length}`)
     db.close()
+  } else if (args.includes('--analyze-existing')) {
+    // 方案 A 快捷通路：把已有 extracted 的 collected 行直接标为 analyzed，无需 LLM。
+    const roleIdx = args.indexOf('--role')
+    const roleFilter = roleIdx !== -1 ? args[roleIdx + 1] : null
+    const limitIdx = args.indexOf('--limit')
+    const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : null
+    const db = openDb()
+    const params = []
+    let sql = "SELECT id, extracted FROM jobs WHERE status='collected' AND extracted IS NOT NULL AND extracted <> ''"
+    if (roleFilter) { sql += ' AND role = ?'; params.push(roleFilter) }
+    if (limit && !isNaN(limit) && limit > 0) { sql += ' LIMIT ?'; params.push(limit) }
+    const rows = db.prepare(sql).all(...params)
+    console.log(`[analyze] 已有 extracted 待转 analyzed：${rows.length} 条${roleFilter ? `（role=${roleFilter}）` : ''}`)
+    let ok = 0, fail = 0
+    for (const r of rows) {
+      try {
+        const parsed = typeof r.extracted === 'string' ? JSON.parse(r.extracted) : r.extracted
+        saveExtraction(db, r.id, r.extracted, {
+          salary: parsed?.salary || '',
+          experience: parsed?.experience || '',
+          education: parsed?.education || ''
+        })
+        ok++
+      } catch (e) {
+        fail++
+        console.warn(`  ✗ ${r.id}: ${e?.message || e}`)
+      }
+    }
+    console.log(`[analyze] 通路 A 完成：成功 ${ok} / 失败 ${fail} / 共 ${rows.length}`)
+    db.close()
   } else {
     const db = openDb()
     const rep = aggregate(db)

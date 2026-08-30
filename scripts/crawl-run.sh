@@ -11,7 +11,7 @@ set -uo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROLES="${ROLES:-AI Agent 前端,AI 产品经理,AI 算法工程师}"
-CITIES="${CITIES:-深圳}"
+CITIES="${CITIES:-深圳,广州,惠州,东莞}"
 NODE_VER="${NODE_VER:-22}"
 
 LOG_DIR="$PROJECT_DIR/data/logs"; mkdir -p "$LOG_DIR"

@@ -22,14 +22,17 @@ export const DEFAULT_CITY = '深圳'
 // 注：原 "FDE" 角色已撤下 —— Boss 搜 "FDE" 实际返回现场部署/硬件测试工程师，
 //     并非前端开发工程师。前端岗族改用 "前端/前端开发/前端工程师" 关键词覆盖（含 AI 前端）。
 export const ROLE_TEMPLATES = {
+  'AI Agent 前端': {
+    keywords: ['AI Agent前端', 'AI前端', '大模型前端', 'LLM前端', 'AIGC前端', '智能体前端', '前端工程师', 'React前端', 'Vue前端', 'Next.js开发', '前端开发', '前端']
+  },
   '前端工程师': {
-    keywords: ['前端', '前端开发', '前端工程师', 'AI Agent前端', 'AI前端', '大模型前端', 'LLM前端', 'AIGC前端', '智能体前端', 'React前端', 'Vue前端', 'Next.js开发']
+    keywords: ['前端', '前端开发', '前端工程师', 'React前端', 'Vue前端', 'Next.js开发']
   },
-  '算法工程师': {
-    keywords: ['大模型算法', 'LLM算法工程师', '深度学习算法', 'AI算法工程师', '机器学习算法']
-  },
-  '产品经理': {
+  'AI 产品经理': {
     keywords: ['AI产品经理', 'AI PM', '大模型产品', '生成式AI产品', 'AI产品设计']
+  },
+  'AI 算法工程师': {
+    keywords: ['大模型算法', 'LLM算法工程师', '深度学习算法', 'AI算法工程师', '机器学习算法']
   }
 }
 
