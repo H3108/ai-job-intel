@@ -201,11 +201,7 @@ export default function Dashboard() {
               </div>
               <div className="mt-4 rounded-xl border border-border bg-surface p-4">
                 <div className="text-sm font-semibold text-text">推荐下一步</div>
-                <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
-                  <Badge tone="neutral">补抓 detail 页生成 raw</Badge>
-                  <Badge tone="neutral">跑一轮真实 LLM analyze</Badge>
-                  <Badge tone="neutral">核对登录态与城市矩阵</Badge>
-                </div>
+                <DynamicQuickActions analytics={analytics} />
               </div>
             </div>
             <div className="rounded-xl border border-border bg-surface p-4">
@@ -324,6 +320,60 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
+    </div>
+  )
+}
+
+function DynamicQuickActions({
+  analytics,
+}: {
+  analytics?: {
+    priorityTop?: { skill: string }[]
+    priority?: { skill: string }[]
+    skillTiers?: { base: { skill: string }[]; premium: { skill: string }[] }
+    personalGap?: { gaps: { skill: string }[] }
+    learningPath?: { stage: string; items?: { skill: string }[] }[]
+    titleClusters?: { key: string; count: number }[]
+  }
+}) {
+  if (!analytics) {
+    return (
+      <p className="text-sm text-muted">正在生成你的个性化行动项…</p>
+    )
+  }
+
+  const base: string[] = analytics.skillTiers?.base?.slice(0, 2).map((s) => String(s.skill)) ?? []
+  const premium: string[] = analytics.skillTiers?.premium?.slice(0, 2).map((s) => String(s.skill)) ?? []
+  const gaps: string[] = analytics.personalGap?.gaps?.slice(0, 3).map((g) => String(g.skill)) ?? []
+  const top: string[] = analytics.priorityTop?.slice(0, 3).map((p) => String(p.skill)) ?? []
+  const actions = [
+    base.length
+      ? { label: `补强必备底座：${base.join(" / ")}`, to: "/roadmap" }
+      : null,
+    premium.length
+      ? { label: `打磨加分稀缺项：${premium.join(" / ")}`, to: "/roadmap" }
+      : null,
+    gaps.length
+      ? { label: `补齐画像缺口：${gaps[0]}`, to: "/persona" }
+      : null,
+    top.length
+      ? { label: `优先学习：${top[0]}`, to: "/roadmap" }
+      : null,
+  ].filter(Boolean) as { label: string; to: string }[]
+
+  if (!actions.length) {
+    return (
+      <p className="text-sm text-muted">暂无个性化行动项，建议先完善画像。</p>
+    )
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted">
+      {actions.map((a) => (
+        <Link key={a.to + a.label} to={a.to}>
+          <Badge tone="neutral">{a.label}</Badge>
+        </Link>
+      ))}
     </div>
   )
 }
