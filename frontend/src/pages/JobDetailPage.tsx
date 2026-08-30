@@ -1,8 +1,8 @@
 import { useMemo } from "react"
 import { useParams, Link } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { fetchJob } from "../api/client"
-import { Section, Badge, Alert, PageHeader, Button, Skeleton } from "../design-system"
+import { fetchJob, fetchJobs, type JobsList } from "../api/client"
+import { Section, Badge, Alert, PageHeader, Button, Skeleton, EmptyState } from "../design-system"
 import { friendlyError } from "../lib/errorMessage"
 
 function fmtTime(s?: string | null) {
@@ -19,6 +19,17 @@ function fmtTime(s?: string | null) {
   }
 }
 
+function SkillList({ skills }: { skills: string[] }) {
+  if (!skills.length) return <div className="text-xs text-muted">暂无技能</div>
+  return (
+    <div className="flex flex-wrap gap-2">
+      {skills.slice(0, 12).map((s) => (
+        <Badge key={s} tone="primary">{s}</Badge>
+      ))}
+    </div>
+  )
+}
+
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data, isLoading, isError, error } = useQuery({
@@ -31,6 +42,15 @@ export default function JobDetailPage() {
     const src = job?.skills || []
     return src.map((s: any) => (typeof s === "string" ? s : s.skill)).filter(Boolean)
   }, [job?.skills])
+
+  const similarQuery = useQuery<JobsList>({
+    queryKey: ["similar", id],
+    queryFn: () =>
+      fetchJobs({
+        limit: 6,
+      }),
+    enabled: !!id,
+  })
 
   return (
     <div className="space-y-8">
@@ -73,10 +93,11 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {skills.slice(0, 12).map((s: string) => (
-                <Badge key={s} tone="primary">{s}</Badge>
-              ))}
+            <div className="mt-4">
+              <div className="text-xs text-muted">技能</div>
+              <div className="mt-2">
+                <SkillList skills={skills} />
+              </div>
             </div>
 
             {job.description && (
@@ -102,6 +123,20 @@ export default function JobDetailPage() {
                 <div className="text-xs text-muted">状态</div>
                 <div className="mt-1 text-sm text-text">{job.status || "—"}</div>
               </div>
+            </div>
+          </Section>
+
+          <Section title="相似岗位">
+            {similarQuery.isLoading && <EmptyState title="加载中" desc="正在寻找相似岗位…" />}
+            {similarQuery.isError && <div className="text-xs text-red-300">无法加载相似岗位。</div>}
+            {similarQuery.data?.jobs?.length === 0 && <EmptyState title="暂无相似岗位" desc="换一个岗位试试。" />}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {similarQuery.data?.jobs?.filter((j: any) => j.id !== job.id).slice(0, 4).map((j: any) => (
+                <Link key={j.id} to={`/jobs/${encodeURIComponent(j.id)}`} className="block rounded-2xl border border-border bg-surface px-4 py-3 transition hover:border-accent/60 hover:shadow-md">
+                  <div className="text-sm text-text">{j.title}</div>
+                  <div className="text-xs text-muted">{j.company} · {j.city}</div>
+                </Link>
+              ))}
             </div>
           </Section>
         </>
