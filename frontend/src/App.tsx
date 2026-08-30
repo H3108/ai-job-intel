@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
-import { Routes, Route, useNavigate } from "react-router-dom"
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom"
+import ErrorBoundary from "./components/ErrorBoundary"
 
 const Dashboard = lazy(() => import("./pages/Dashboard"))
 const MarketPage = lazy(() => import("./pages/MarketPage"))
@@ -19,10 +20,13 @@ const NAV = [
 
 function AppShell() {
   const navigate = useNavigate()
+  const loc = useLocation()
+  const current = loc.pathname
+
   return (
     <div className="min-h-screen bg-bg text-text">
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center font-display font-bold text-sm">JI</div>
             <div>
@@ -35,8 +39,11 @@ function AppShell() {
               <button
                 key={item.to}
                 onClick={() => navigate(item.to)}
-                className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors hover:text-text ${
+                  current === item.to ? "text-text" : "text-muted"
+                }`}
               >
+                {item.icon && <span className="mr-1">{item.icon}</span>}
                 {item.label}
               </button>
             ))}
@@ -45,17 +52,19 @@ function AppShell() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Suspense fallback={<div className="text-sm text-muted">加载中…</div>}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/market" element={<MarketPage />} />
-            <Route path="/jobs/:id" element={<JobDetailPage />} />
-            <Route path="/profile" element={<PersonaPage />} />
-            <Route path="/roadmap" element={<RoadmapPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<div className="text-sm text-muted">加载中…</div>}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/market" element={<MarketPage />} />
+              <Route path="/jobs/:id" element={<JobDetailPage />} />
+              <Route path="/profile" element={<PersonaPage />} />
+              <Route path="/roadmap" element={<RoadmapPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       <footer className="border-t border-border py-8">
