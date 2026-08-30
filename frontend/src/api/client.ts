@@ -42,7 +42,7 @@ export interface Scopes { ok: boolean; cities: string[]; roles: string[]; indust
 export interface Profile { exists: boolean; target_role?: string | null; target_city?: string | null; current_title?: string | null; current_company?: string | null; current_city?: string | null; total_experience?: string | null; current_skills?: string | null; education?: string | null; note?: string | null; updated_at?: string | null }
 export interface CrawlStatus { ok: boolean; isRunning: boolean; lastRun: string | null; nextRun: string; schedule: string; log: string; progress?: { total: number; done: number; percent: number } | null }
 export interface JobsStats { total: number; cities: { city: string; n: number }[]; roles: { role: string; n: number }[]; recent_7d: number; recent_30d: number }
-export interface IntelligenceLatest { generated_at: string; types: Record<string, unknown> }
+export interface IntelligenceLatest { generated_at?: string; status?: string; types: Record<string, { generated_at?: string; model?: string; payload?: string }> }
 
 export async function fetchJobs(opts?: { city?: string; q?: string; limit?: number; offset?: number }): Promise<JobsList> {
   const p = new URLSearchParams()
