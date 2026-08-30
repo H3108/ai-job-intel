@@ -6,14 +6,15 @@ import { ThemeToggle } from "./ThemeToggle"
 import { Loading } from "./ui"
 import ScopeTagline from "./ScopeTagline"
 import ErrorBoundary from "./ErrorBoundary"
+import { Button } from "../design-system"
 
-// P2：五页改为动态导入 → 自动代码分割（每页独立 chunk，首屏只加载外壳 + 当前路由）。
 const Dashboard = lazy(() => import("../pages/Dashboard"))
 const MarketPage = lazy(() => import("../pages/MarketPage"))
 const JobsPage = lazy(() => import("../pages/JobsPage"))
 const RoleComparePage = lazy(() => import("../pages/RoleComparePage"))
 const RoleDetailPage = lazy(() => import("../pages/RoleDetailPage"))
 const PersonaPage = lazy(() => import("../pages/PersonaPage"))
+const AdminDataPage = lazy(() => import("../pages/DataPage"))
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"))
 
 const NAV_GROUPS = [
@@ -22,7 +23,6 @@ const NAV_GROUPS = [
     items: [
       { to: "/", label: "能力总览", end: true },
       { to: "/roadmap", label: "学习路线" },
-      { to: "/data", label: "数据洞察" },
     ],
   },
   {
@@ -51,8 +51,88 @@ function BrandBlock() {
   )
 }
 
+const ADMIN_SECRET = "hush-admin"
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const [ok, setOk] = useState(false)
+  const [input, setInput] = useState("")
+  const [error, setError] = useState("")
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (input === ADMIN_SECRET) {
+      setOk(true)
+      sessionStorage.setItem("hush_admin", "1")
+    } else {
+      setError("访问码错误")
+    }
+  }
+
+  useEffect(() => {
+    if (sessionStorage.getItem("hush_admin") === "1") setOk(true)
+  }, [])
+
+  if (ok) return <>{children}</>
+
+  return (
+    <div className="mx-auto mt-20 max-w-sm rounded-2xl border border-border bg-surface p-6">
+      <h2 className="text-lg font-semibold text-text">管理员验证</h2>
+      <p className="mt-1 text-sm text-muted">请输入访问码以查看数据后台。</p>
+      <form onSubmit={submit} className="mt-4 space-y-3">
+        <input
+          type="password"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="访问码"
+          className="w-full"
+          aria-label="管理员访问码"
+        />
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <Button className="w-full">验证</Button>
+      </form>
+    </div>
+  )
+}
+
+function BottomNav() {
+  const location = useLocation()
+  const items = [
+    { to: "/", label: "首页" },
+    { to: "/market", label: "市场" },
+    { to: "/roadmap", label: "路线" },
+    { to: "/persona", label: "我的" },
+  ]
+  return (
+    <nav
+      aria-label="主导航底部栏"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg/95 backdrop-blur lg:hidden"
+    >
+      <div className="mx-auto grid h-14 max-w-6xl grid-cols-4 px-2">
+        {items.map((it) => {
+          const active = it.to === "/" ? location.pathname === "/" : location.pathname.startsWith(it.to)
+          return (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              end={it.to === "/"}
+              className={cn(
+                "flex flex-col items-center justify-center gap-0.5 text-[11px] transition-colors",
+                active ? "text-text" : "text-muted"
+              )}
+            >
+              <span aria-hidden="true" className="text-base leading-none">
+                {it.to === "/" ? "⌂" : it.to === "/market" ? "◫" : it.to === "/roadmap" ? "⟶" : "◉"}
+              </span>
+              {it.label}
+            </NavLink>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
 function NavLinkItem({ item, search }: { item: { to: string; label: string; end?: boolean }; search?: string }) {
-  // 保留当前 URL 的 ?role=&city= 等作用域参数，跨页面切换不丢失角色/城市选择。
   const to = search ? { pathname: item.to, search } : item.to
   return (
     <NavLink
@@ -92,12 +172,6 @@ function NavGroups({ search }: { search?: string }) {
 }
 
 export default function AppShell() {
-  // 方案 C：作用域从 URL（?role=&city=）读取，是各页面看"哪个市场"的单一真相源
-  // （各页通过 useScope() 自行读取；作用域筛选已折叠进侧边栏品牌区的 ScopeTagline）。
-
-  // P1-1：分析数据不再在 AppShell 全局阻塞。各页面（Dashboard/Gap/Roadmap/Clusters/Data）
-  // 通过 useAnalytics(scope) 自行取数，无关页面（persona/compare/salary-audit/jobs）
-  // 不再等待 204KB analytics。外壳只负责导航与路由渲染。
   const [navOpen, setNavOpen] = useState(false)
   const location = useLocation()
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -105,19 +179,16 @@ export default function AppShell() {
   const desktopNavRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  // 路由切换时自动收起移动端抽屉
   useEffect(() => {
     setNavOpen(false)
   }, [location.pathname])
 
-  // A1：移动端抽屉无障碍——Esc 关闭 + 焦点移入/返回 + 背景 inert + Tab 焦点陷阱
   useEffect(() => {
     if (!navOpen) return
     const panel = panelRef.current
     const content = contentRef.current
     const desktopNav = desktopNavRef.current
 
-    // 焦点移入抽屉（优先首个可聚焦元素，即关闭按钮）
     const focusables = panel
       ? Array.from(
           panel.querySelectorAll<HTMLElement>(
@@ -127,7 +198,6 @@ export default function AppShell() {
       : []
     ;(focusables[0] ?? panel)?.focus()
 
-    // 背景内容设为 inert，避免 Tab 逃逸到抽屉背后
     if (content) (content as HTMLElement & { inert: boolean }).inert = true
     if (desktopNav) (desktopNav as HTMLElement & { inert: boolean }).inert = true
 
@@ -155,7 +225,6 @@ export default function AppShell() {
       document.removeEventListener("keydown", onKey)
       if (content) (content as HTMLElement & { inert: boolean }).inert = false
       if (desktopNav) (desktopNav as HTMLElement & { inert: boolean }).inert = false
-      // 关闭后焦点返回触发按钮（汉堡键）
       triggerRef.current?.focus()
     }
   }, [navOpen])
@@ -169,7 +238,6 @@ export default function AppShell() {
         跳到主内容
       </a>
 
-      {/* 桌面端常驻侧边栏：sticky 全高，品牌固定顶部、导航区可滚、作用域固定底部 */}
       <aside
         ref={desktopNavRef}
         className="hidden w-60 shrink-0 flex-col border-r border-border lg:sticky lg:top-0 lg:flex lg:h-screen"
@@ -185,7 +253,6 @@ export default function AppShell() {
         </nav>
       </aside>
 
-      {/* 移动端抽屉 */}
       {navOpen && (
         <div className="lg:hidden">
           <div
@@ -221,8 +288,7 @@ export default function AppShell() {
         </div>
       )}
 
-      <div ref={contentRef} className="flex min-w-0 flex-1 flex-col">
-        {/* 移动端顶栏（含汉堡 + 行内作用域标签） */}
+      <div ref={contentRef} className="flex min-w-0 flex-1 flex-col pb-14 lg:pb-0">
         <header className="flex flex-col gap-2 border-b border-border px-4 py-3 lg:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -250,19 +316,22 @@ export default function AppShell() {
             <Suspense fallback={<Loading msg="加载页面…" />}>
               <ErrorBoundary>
                 <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/jobs" element={<JobsPage />} />
-                <Route path="/jobs/:id" element={<JobsPage />} />
-                <Route path="/market" element={<MarketPage />} />
-                <Route path="/compare" element={<RoleComparePage />} />
-                <Route path="/role-detail" element={<RoleDetailPage />} />
-                <Route path="/persona" element={<PersonaPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/jobs/:id" element={<JobsPage />} />
+                  <Route path="/market" element={<MarketPage />} />
+                  <Route path="/compare" element={<RoleComparePage />} />
+                  <Route path="/role-detail" element={<RoleDetailPage />} />
+                  <Route path="/persona" element={<PersonaPage />} />
+                  <Route path="/admin/data" element={<AdminRoute><AdminDataPage /></AdminRoute>} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
               </ErrorBoundary>
             </Suspense>
           </div>
         </main>
+
+        <BottomNav />
       </div>
     </div>
   )
