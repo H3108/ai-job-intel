@@ -19,6 +19,7 @@ const RoleComparePage = lazy(() => import("../pages/RoleComparePage"))
 const SalaryAuditPage = lazy(() => import("../pages/SalaryAuditPage"))
 const RoleDetailPage = lazy(() => import("../pages/RoleDetailPage"))
 const JobsPage = lazy(() => import("../pages/JobsPage"))
+const MarketPage = lazy(() => import("../pages/MarketPage"))
 const AnalysisShowcasePage = lazy(() => import("../pages/AnalysisShowcasePage"))
 const DesignSystemShowcase = lazy(() => import("../design-system/Showcase"))
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"))
@@ -36,6 +37,7 @@ const NAV_GROUPS = [
     label: "岗位",
     items: [
       { to: "/jobs", label: "职位列表" },
+      { to: "/market", label: "岗位市场" },
       { to: "/compare", label: "角色对比" },
       { to: "/role-detail", label: "岗位细报" },
     ],
@@ -264,6 +266,7 @@ export default function AppShell() {
                 <Route path="/data-schedule" element={<DataSchedulePage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/:id" element={<JobsPage />} />
+                <Route path="/market" element={<MarketPage />} />
                 <Route path="/compare" element={<RoleComparePage />} />
                 <Route path="/salary-audit" element={<SalaryAuditPage />} />
                 <Route path="/role-detail" element={<RoleDetailPage />} />
