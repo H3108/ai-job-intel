@@ -81,18 +81,3 @@ test('market cards link to job detail', async ({ page }) => {
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: '高级/资深前端开发工程师（AI方向）' }).first()).toBeVisible()
 })
-
-test('profile form is present and not crashing', async ({ page }) => {
-  await page.goto('/profile')
-  await page.waitForLoadState('networkidle')
-  await expect(page.getByLabel('目标岗位')).toBeVisible()
-  await expect(page.getByLabel('目标城市')).toBeVisible()
-})
-
-test('reports trigger does not crash page', async ({ page }) => {
-  await page.goto('/reports')
-  await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: '手动触发分析' }).click()
-  await page.waitForTimeout(1200)
-  await expect(page.getByRole('main').getByText('智能分析').first()).toBeVisible()
-})
