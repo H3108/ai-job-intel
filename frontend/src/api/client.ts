@@ -75,6 +75,12 @@ export async function fetchProfile(): Promise<Profile> {
   return res.json()
 }
 
+export async function putProfile(patch: Record<string, string | number | boolean | null>): Promise<{ ok: boolean; exists: boolean; error?: string }> {
+  const res = await fetch('/api/profile', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) })
+  if (!res.ok) { let d=''; try{d=(await res.json()).error||''}catch{}; throw new Error(`保存画像失败：${res.status}${d?` · ${d}`:''}`) }
+  return res.json()
+}
+
 export async function fetchCrawlStatus(): Promise<CrawlStatus> {
   const res = await fetch('/api/crawl/status')
   if (!res.ok) throw new Error(`fetch /api/crawl/status failed: ${res.status}`)
