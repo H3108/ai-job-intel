@@ -12,12 +12,12 @@ export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
   asChild?: boolean
 }
 
-const btnBase = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+const btnBase = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none will-change-transform"
 const btnVariants: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-bg hover:bg-accent-hover active:scale-[0.98]",
-  secondary: "bg-surface-solid text-text border border-border hover:border-accent/50 active:scale-[0.98]",
-  ghost: "text-text hover:bg-surface active:scale-[0.98]",
-  danger: "bg-danger text-danger-fg hover:opacity-90 active:scale-[0.98]",
+  primary: "bg-accent text-bg hover:bg-accent-hover active:scale-[0.97]",
+  secondary: "bg-surface-solid text-text border border-border hover:border-accent/60 hover:bg-surface active:scale-[0.97]",
+  ghost: "text-text hover:bg-surface active:scale-[0.97]",
+  danger: "bg-danger text-danger-fg hover:opacity-90 active:scale-[0.97]",
 }
 const btnSizes: Record<ButtonSize, string> = {
   sm: "px-2.5 py-1.5 text-xs",
@@ -68,7 +68,7 @@ export function Section({
           {desc && <p className="mt-1 text-sm text-muted">{desc}</p>}
         </div>
       )}
-      <div className="rounded-2xl border border-border bg-surface/80 px-4 py-4 shadow-sm backdrop-blur">{children}</div>
+      <div className="rounded-2xl border border-border bg-surface/80 px-4 py-4 shadow-sm backdrop-blur transition hover:border-accent/40">{children}</div>
     </section>
   )
 }
@@ -89,7 +89,7 @@ export function Badge({
     neutral: "border-border bg-surface text-muted",
   }
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${tones[tone] || tones.secondary}`}>
+    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium transition hover:border-accent/40 ${tones[tone] || tones.secondary}`}>
       {children}
     </span>
   )
