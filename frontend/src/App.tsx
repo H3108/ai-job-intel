@@ -2,16 +2,18 @@ import { lazy, Suspense } from "react"
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom"
 import ErrorBoundary from "./components/ErrorBoundary"
 
-const Dashboard = lazy(() => import("./pages/Dashboard"))
+const OverviewPage = lazy(() => import("./pages/OverviewPage"))
 const MarketPage = lazy(() => import("./pages/MarketPage"))
-const JobDetailPage = lazy(() => import("./pages/JobDetailPage"))
-const PersonaPage = lazy(() => import("./pages/PersonaPage"))
+const MatchesPage = lazy(() => import("./pages/MatchesPage"))
+const CareerPage = lazy(() => import("./pages/CareerPage"))
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage"))
+const ProfilePage = lazy(() => import("./pages/ProfilePage"))
 const ReportsPage = lazy(() => import("./pages/ReportsPage"))
+const JobDetailPage = lazy(() => import("./pages/JobDetailPage"))
 const SavedJobsPage = lazy(() => import("./pages/SavedJobsPage"))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"))
 
-function IconChart(props: React.SVGProps<SVGSVGElement>) {
+function IconOverview(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -19,7 +21,7 @@ function IconChart(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-function IconSearch(props: React.SVGProps<SVGSVGElement>) {
+function IconMarket(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
@@ -27,11 +29,20 @@ function IconSearch(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-function IconUser(props: React.SVGProps<SVGSVGElement>) {
+function IconMatches(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  )
+}
+function IconCareer(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 7h-9" />
+      <path d="M14 17H5" />
+      <circle cx="17" cy="17" r="3" />
+      <circle cx="7" cy="7" r="3" />
     </svg>
   )
 }
@@ -40,6 +51,14 @@ function IconRoadmap(props: React.SVGProps<SVGSVGElement>) {
     <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  )
+}
+function IconProfile(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" focusable="false" {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
     </svg>
   )
 }
@@ -53,11 +72,13 @@ function IconReport(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const NAV = [
-  { to: "/", label: "市场概览", end: true, icon: IconChart },
-  { to: "/market", label: "岗位市场", icon: IconSearch },
-  { to: "/profile", label: "我的画像", icon: IconUser },
-  { to: "/roadmap", label: "学习路线", icon: IconRoadmap },
-  { to: "/reports", label: "智能分析", icon: IconReport },
+  { to: "/", label: "Overview", end: true, icon: IconOverview },
+  { to: "/market", label: "Market", icon: IconMarket },
+  { to: "/matches", label: "Matches", icon: IconMatches },
+  { to: "/career", label: "Career", icon: IconCareer },
+  { to: "/roadmap", label: "Roadmap", icon: IconRoadmap },
+  { to: "/profile", label: "Profile", icon: IconProfile },
+  { to: "/reports", label: "Reports", icon: IconReport },
 ]
 
 function AppShell() {
@@ -73,18 +94,19 @@ function AppShell() {
             <div className="h-8 w-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center font-display font-bold text-sm">JI</div>
             <div>
               <div className="font-display text-sm font-semibold leading-tight">JobIntel</div>
-              <div className="text-xs text-muted">AI 求职情报</div>
+              <div className="text-xs text-muted">AI Career Intelligence</div>
             </div>
           </div>
           <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV.map((item) => {
               const Icon = item.icon
+              const active = current === item.to
               return (
                 <button
                   key={item.to}
                   onClick={() => navigate(item.to)}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:px-3 ${
-                    current === item.to ? "text-text" : "text-muted"
+                    active ? "text-text" : "text-muted"
                   }`}
                 >
                   {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
@@ -101,12 +123,14 @@ function AppShell() {
           <Suspense fallback={<div className="text-sm text-muted">加载中…</div>}>
             <div className="animate-fade-in">
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<OverviewPage />} />
                 <Route path="/market" element={<MarketPage />} />
-                <Route path="/jobs/:id" element={<JobDetailPage />} />
-                <Route path="/profile" element={<PersonaPage />} />
+                <Route path="/matches" element={<MatchesPage />} />
+                <Route path="/career" element={<CareerPage />} />
                 <Route path="/roadmap" element={<RoadmapPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/jobs/:id" element={<JobDetailPage />} />
                 <Route path="/saved" element={<SavedJobsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

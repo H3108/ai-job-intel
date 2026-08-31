@@ -16,7 +16,7 @@ const root = join(__dirname, '..', '..')
 const dataDir = join(root, 'data')
 mkdirSync(dataDir, { recursive: true })
 
-const dbPath = process.env.JOBS_DB_PATH || join(dataDir, 'jobs.db')
+const dbPath = process.env.JOBS_DB_PATH || join(dataDir, 'jobs_v2.db')
 const db = new DatabaseSync(dbPath)
 const schemaSql = readFileSync(join(dataDir, 'schema-v2.sql'), 'utf-8')
 db.exec(schemaSql)
@@ -115,11 +115,51 @@ app.get('/api/jobs/search/jobs', (req, res) => {
 app.get('/api/jobs/stats', (_req, res) => {
   try {
     const total = db.prepare('SELECT COUNT(*) AS n FROM jobs').get().n
-    const cities = db.prepare("SELECT city, COUNT(*) n FROM jobs WHERE city IS NOT NULL AND city <> '' GROUP BY city ORDER BY n DESC").all()
-    const roles = db.prepare("SELECT title AS role, COUNT(*) n FROM jobs WHERE title IS NOT NULL AND title <> '' GROUP BY title ORDER BY n DESC LIMIT 20").all()
     const recent7 = db.prepare("SELECT COUNT(*) n FROM jobs WHERE collected_at >= datetime('now', '-7 days')").get().n
     const recent30 = db.prepare("SELECT COUNT(*) n FROM jobs WHERE collected_at >= datetime('now', '-30 days')").get().n
-    res.json({ total, cities, roles, recent_7d: recent7, recent_30d: recent30 })
+    const cities = db.prepare("SELECT city, COUNT(*) n FROM jobs WHERE city IS NOT NULL AND city <> '' GROUP BY city ORDER BY n DESC LIMIT 20").all()
+    const roles = db.prepare("SELECT title AS role, COUNT(*) n FROM jobs WHERE title IS NOT NULL AND title <> '' GROUP BY title ORDER BY n DESC LIMIT 30").all()
+
+    const salaryRows = db.prepare('SELECT salary_min, salary_max FROM jobs WHERE salary_min IS NOT NULL AND salary_min > 0').all()
+    const salaries = salaryRows.flatMap((r) => [r.salary_min, r.salary_max].filter(Number.isFinite)).sort((a, b) => a - b)
+    const salaryDist = salaries.length ? {
+      median: salaries[Math.floor(salaries.length * 0.5)],
+      p25: salaries[Math.floor(salaries.length * 0.25)],
+      p75: salaries[Math.floor(salaries.length * 0.75)],
+    } : { median: null, p25: null, p75: null }
+
+    let skillDemand = []
+    try {
+      skillDemand = db.prepare(`
+        SELECT skill, COUNT(*) n FROM jobs,
+        json_each(jobs.skills) WHERE json_valid(jobs.skills)
+        GROUP BY skill ORDER BY n DESC LIMIT 20
+      `).all()
+    } catch {}
+
+    const experienceDist = db.prepare(`
+      SELECT experience, COUNT(*) n FROM jobs
+      WHERE experience IS NOT NULL AND experience <> ''
+      GROUP BY experience ORDER BY n DESC LIMIT 20
+    `).all()
+
+    const educationDist = db.prepare(`
+      SELECT education, COUNT(*) n FROM jobs
+      WHERE education IS NOT NULL AND education <> ''
+      GROUP BY education ORDER BY n DESC LIMIT 20
+    `).all()
+
+    res.json({
+      total,
+      recent_7d: recent7,
+      recent_30d: recent30,
+      city_distribution: cities,
+      role_distribution: roles,
+      salary_distribution: salaryDist,
+      skill_demand: skillDemand,
+      experience_distribution: experienceDist,
+      education_distribution: educationDist,
+    })
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) })
   }
@@ -392,6 +432,16 @@ app.get('/api/intelligence/reports/:id', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM intelligence_cache WHERE id = ?').get(req.params.id)
     if (!row) return res.status(404).json({ ok: false, error: 'report not found' })
+    res.json({ ok: true, ...row })
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) })
+  }
+})
+
+app.get('/api/intelligence/career', (_req, res) => {
+  try {
+    const row = db.prepare("SELECT * FROM intelligence_cache WHERE type = 'career' ORDER BY generated_at DESC LIMIT 1").get()
+    if (!row) return res.status(404).json({ ok: false, error: 'career intelligence not found' })
     res.json({ ok: true, ...row })
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) })

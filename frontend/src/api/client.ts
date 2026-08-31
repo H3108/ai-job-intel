@@ -5,6 +5,8 @@ export interface Job {
   title: string
   company?: string | null
   city?: string | null
+  district?: string | null
+  industry?: string | null
   salary_raw?: string | null
   salary_min?: number | null
   salary_max?: number | null
@@ -13,19 +15,16 @@ export interface Job {
   salary_note?: string | null
   experience?: string | null
   education?: string | null
-  posted_at?: string | null
-  collected_at?: string | null
-  updated_at?: string | null
-  status?: string | null
+  employment_type?: string | null
   description?: string | null
   skills?: string | null
   requirements?: string | null
   benefits?: string | null
   tags?: string | null
-  district?: string | null
-  industry?: string | null
-  employment_type?: string | null
-  source_url?: string | null
+  posted_at?: string | null
+  collected_at?: string | null
+  updated_at?: string | null
+  status?: string | null
   raw_payload?: string | null
   raw_format?: string | null
   raw_source?: string | null
@@ -41,8 +40,10 @@ export interface JobsList { total: number; limit: number; offset: number; jobs: 
 export interface Scopes { ok: boolean; cities: string[]; roles: string[]; industries: string[]; plannedCities?: string[]; defaultRole?: string; roleStats?: Array<{ role: string; total: number; analyzed: number; family: string; func: string }> }
 export interface Profile { exists: boolean; target_role?: string | null; target_city?: string | null; current_title?: string | null; current_company?: string | null; current_city?: string | null; total_experience?: string | null; current_skills?: string | null; education?: string | null; note?: string | null; updated_at?: string | null }
 export interface CrawlStatus { ok: boolean; isRunning: boolean; lastRun: string | null; nextRun: string; schedule: string; log: string; progress?: { total: number; done: number; percent: number } | null }
-export interface JobsStats { total: number; cities: { city: string; n: number }[]; roles: { role: string; n: number }[]; recent_7d: number; recent_30d: number }
+export interface JobsStats { total: number; recent_7d: number; recent_30d: number; city_distribution: Array<{ city: string; n: number }>; role_distribution: Array<{ role: string; n: number }>; salary_distribution?: { median: number | null; p25: number | null; p75: number | null } | null; skill_demand?: Array<{ skill: string; n: number }> | null; experience_distribution?: Array<{ experience: string; n: number }> | null; education_distribution?: Array<{ education: string; n: number }> | null }
 export interface IntelligenceLatest { generated_at?: string; status?: string; types: Record<string, { generated_at?: string; model?: string; payload?: string }> }
+export interface SavedJob { job_id: string; created_at?: string }
+export interface SavedJobsResponse { ok: boolean; total: number; jobs: any[] }
 
 export async function fetchJobs(opts?: { city?: string; q?: string; limit?: number; offset?: number }): Promise<JobsList> {
   const p = new URLSearchParams()
@@ -120,12 +121,40 @@ export async function stopCrawl(): Promise<{ ok: boolean; killed: boolean; messa
 export const triggerCrawlLegacy = triggerCrawl
 export const stopCrawlLegacy = stopCrawl
 
-export interface Analytics { targetRole?: string; total?: number; skillRank?: any[]; categoryPriority?: any[]; personalGap?: any; titleClusters?: any[]; salary?: any; expDist?: any; eduDist?: any; roleDist?: any[]; learningPath?: any[]; skillTiers?: any; levelWeights?: Record<string, number>; categoryPrecedence?: string[] }
-export async function fetchAnalytics(): Promise<Analytics> { return { total: 0, skillRank: [], categoryPriority: [], titleClusters: [], salary: {}, expDist: {}, eduDist: {}, roleDist: [] } }
-export interface RoleDetail { salaryPercentiles: { p25: number | null; p50: number | null; p75: number | null; p90: number | null }; salaryConfidence: { high: number; yellow: number; red: number; null: number; total: number }; companyTop: { company: string; count: number }[]; skillByCategory: Record<string, any[]>; skillByLevel: Record<string, any[]> }
-export async function fetchRoleDetail(): Promise<RoleDetail> { return { salaryPercentiles: { p25: null, p50: null, p75: null, p90: null }, salaryConfidence: { high: 0, yellow: 0, red: 0, null: 0, total: 0 }, companyTop: [], skillByCategory: {}, skillByLevel: {} } }
-export interface SalaryAudit { ok: boolean; ts: number; summary: { decoded: number; lowConfRed: number } }
-export async function fetchSalaryAudit(): Promise<SalaryAudit> { return { ok: true, ts: Date.now(), summary: { decoded: 0, lowConfRed: 0 } } }
-export async function importJobs(): Promise<{ ok: boolean; updated?: number }> { return { ok: false } }
-export async function fetchMastery(): Promise<{ ok: boolean; items: Array<{ skill: string; status: string }> }> { return { ok: false, items: [] } }
-export async function putMastery(): Promise<{ ok: boolean; updated: number }> { return { ok: false, updated: 0 } }
+export interface SavedJobsResponse { ok: boolean; total: number; jobs: any[] }
+export async function fetchSaved(): Promise<SavedJobsResponse> {
+  const res = await fetch('/api/saved')
+  if (!res.ok) throw new Error(`fetch /api/saved failed: ${res.status}`)
+  return res.json()
+}
+
+export async function toggleSaved(jobId: string): Promise<{ ok: boolean; saved: boolean }> {
+  const res = await fetch(`/api/saved/${encodeURIComponent(jobId)}`, { method: 'POST' })
+  if (!res.ok) throw new Error(`fetch /api/saved/${jobId} failed: ${res.status}`)
+  return res.json()
+}
+
+export interface IntelligenceItem { id?: string; type?: string; generated_at?: string; model?: string; payload?: string; markdown?: string }
+export async function fetchIntelligenceByType(type: string): Promise<IntelligenceItem> {
+  const res = await fetch(`/api/intelligence/${encodeURIComponent(type)}`)
+  if (!res.ok) throw new Error(`fetch /api/intelligence/${type} failed: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchIntelligenceReports(): Promise<IntelligenceItem[]> {
+  const res = await fetch('/api/intelligence/reports')
+  if (!res.ok) throw new Error(`fetch /api/intelligence/reports failed: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchIntelligenceReportById(id: string): Promise<IntelligenceItem> {
+  const res = await fetch(`/api/intelligence/reports/${encodeURIComponent(id)}`)
+  if (!res.ok) throw new Error(`fetch /api/intelligence/reports/${id} failed: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchCareerIntelligence(): Promise<IntelligenceItem> {
+  const res = await fetch('/api/intelligence/career')
+  if (!res.ok) throw new Error(`fetch /api/intelligence/career failed: ${res.status}`)
+  return res.json()
+}
