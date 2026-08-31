@@ -12,7 +12,7 @@ export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
   asChild?: boolean
 }
 
-const btnBase = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none will-change-transform"
+const btnBase = "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/80 focus-visible:shadow-[0_0_0_4px_rgba(8,145,178,0.25)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none will-change-transform"
 const btnVariants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-bg hover:bg-accent-hover active:scale-[0.97]",
   secondary: "bg-surface-solid text-text border border-border hover:border-accent/60 hover:bg-surface active:scale-[0.97]",

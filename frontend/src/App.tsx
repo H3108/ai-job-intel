@@ -99,16 +99,18 @@ function AppShell() {
       <main className="mx-auto max-w-6xl px-4 py-6">
         <ErrorBoundary>
           <Suspense fallback={<div className="text-sm text-muted">加载中…</div>}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/market" element={<MarketPage />} />
-              <Route path="/jobs/:id" element={<JobDetailPage />} />
-              <Route path="/profile" element={<PersonaPage />} />
-              <Route path="/roadmap" element={<RoadmapPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/saved" element={<SavedJobsPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
+            <div className="animate-fade-in">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/market" element={<MarketPage />} />
+                <Route path="/jobs/:id" element={<JobDetailPage />} />
+                <Route path="/profile" element={<PersonaPage />} />
+                <Route path="/roadmap" element={<RoadmapPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/saved" element={<SavedJobsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </div>
           </Suspense>
         </ErrorBoundary>
       </main>

@@ -19,6 +19,14 @@
     --primary-soft: rgba(124,58,237,0.15);
     --font-heading: 'Fira Code', 'Geist Mono', ui-monospace, monospace;
     --font-body: 'Inter', 'Fira Sans', 'Geist', system-ui, -apple-system, sans-serif;
+
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.25rem;
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.25), 0 6px 16px rgba(0,0,0,0.18);
+    --shadow-elevated: 0 2px 4px rgba(0,0,0,0.25), 0 10px 24px rgba(0,0,0,0.22);
+    --transition-fast: 150ms cubic-bezier(0.2,0,0,1);
+    --transition-spring: 300ms cubic-bezier(0.34,1.56,0.64,1);
   }
 }
 
@@ -44,6 +52,11 @@
   .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
   .min-w-0 { min-width: 0; }
   .max-w-full { max-width: 100%; }
+  .rounded-card { border-radius: var(--radius-md); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .transition-fast { transition-duration: var(--transition-fast); }
+  .transition-spring { transition-duration: var(--transition-spring); }
 }
 
 @layer components {
