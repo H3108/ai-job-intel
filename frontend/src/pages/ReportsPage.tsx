@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchIntelligenceLatest, triggerIntelligence } from "../api/client"
 import { Section, Badge, EmptyState, PageHeader, Button } from "../design-system"
 import { Link } from "react-router-dom"
+import React from "react"
 
 const TYPES = [
   { key: "market", label: "市场分析", desc: "岗位总量、分布与趋势" },
@@ -53,9 +54,27 @@ function safeJson(raw?: string) {
   try { return JSON.parse(raw) } catch { return null }
 }
 
+function useCopyText() {
+  const [text, setText] = React.useState("")
+  const [ok, setOk] = React.useState(false)
+  const copy = (value: string) => {
+    setText(value)
+    setOk(false)
+    setTimeout(async () => {
+      try {
+        await navigator.clipboard.writeText(value)
+        setOk(true)
+      } catch {}
+    }, 0)
+  }
+  return { text, ok, copy }
+}
+
 function InsightCard({ label, desc, item, children }: { label: string; desc: string; item?: any; children?: React.ReactNode }) {
+  const { copy, ok } = useCopyText()
   const ready = !!item
   const meta = item?.model ? `模型：${item.model}` : "模型：—"
+  const exportable = item?.payload || item?.markdown
 
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-surface px-4 py-4 transition hover:border-accent/60 hover:shadow-md">
@@ -80,6 +99,25 @@ function InsightCard({ label, desc, item, children }: { label: string; desc: str
       )}
 
       {ready && children}
+
+      {exportable && (
+        <div className="mt-3 flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => copy(typeof exportable === 'string' ? exportable : JSON.stringify(exportable, null, 2))}>
+            {ok ? "已复制" : "复制结果"}
+          </Button>
+          {typeof exportable === 'string' && (
+            <Button variant="ghost" size="sm" onClick={() => {
+              const blob = new Blob([exportable], { type: 'text/plain;charset=utf-8' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `${label}_${new Date(item?.generated_at || Date.now()).toISOString().slice(0,10)}.txt`
+              a.click()
+              URL.revokeObjectURL(url)
+            }}>下载</Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -201,7 +239,7 @@ function ReportInsight({ payload }: { payload: any }) {
 
 export default function ReportsPage() {
   const qc = useQueryClient()
-  const intel = useQuery({ queryKey: ["intelligenceLatest"], queryFn: fetchIntelligenceLatest })
+  const intel = useQuery({ queryKey: ["intelligenceLatest"], queryFn: fetchIntelligenceLatest, refetchInterval: 60_000 })
   const trigger = useMutation({
     mutationFn: triggerIntelligence,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["intelligenceLatest"] }),
@@ -211,6 +249,7 @@ export default function ReportsPage() {
   const status = intel.data?.status || "pending_analysis"
   const readyCount = TYPES.filter(t => !!types[t.key]).length
   const totalCount = TYPES.length
+  const lastGenerated = intel.data?.generated_at
 
   let summaryText = "尚无完整分析。点击“手动触发分析”生成综合结论。"
   if (readyCount === totalCount && types.report?.payload) {
@@ -226,8 +265,11 @@ export default function ReportsPage() {
         title="智能分析"
         desc="由 Hush AI OS 生成市场分析、求职建议、技能差距与学习路线。"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status === "ready" ? "success" : "warning"}>{status === "ready" ? "已就绪" : "等待分析"}</Badge>
+            {lastGenerated && (
+              <Badge tone="secondary">{fmtDate(lastGenerated)}</Badge>
+            )}
             <Button variant="secondary" loading={trigger.isPending} onClick={() => trigger.mutate()}>
               {trigger.isPending ? '生成中...' : '手动触发分析'}
             </Button>
@@ -238,12 +280,15 @@ export default function ReportsPage() {
       <Section title="综合结论" desc="基于全部分析结果的一句话结论与下一步。">
         <div className="flex flex-col gap-2">
           <div className="text-sm text-text">{summaryText}</div>
-          {types.recommendations?.payload && (
-            <Link to="/market" className="text-xs text-accent hover:underline">查看推荐岗位 →</Link>
-          )}
-          {types.roadmap?.payload && (
-            <Link to="/roadmap" className="text-xs text-accent hover:underline">查看学习路线 →</Link>
-          )}
+          <div className="flex flex-wrap gap-3">
+            {types.recommendations?.payload && (
+              <Link to="/market" className="text-xs text-accent hover:underline">查看推荐岗位 →</Link>
+            )}
+            {types.roadmap?.payload && (
+              <Link to="/roadmap" className="text-xs text-accent hover:underline">查看学习路线 →</Link>
+            )}
+            <button className="text-xs text-muted hover:text-text" onClick={() => window.dispatchEvent(new CustomEvent('reports-refresh'))}>刷新结果</button>
+          </div>
         </div>
       </Section>
 

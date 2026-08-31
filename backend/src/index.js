@@ -359,7 +359,10 @@ app.get('/api/intelligence/latest', (_req, res) => {
     for (const [type, items] of Object.entries(grouped)) {
       latest[type] = items[0]
     }
-    res.json({ generated_at: new Date().toISOString(), types: latest })
+    const ready = Object.keys(latest).length
+    const total = 5
+    const status = ready >= total ? 'ready' : 'pending_analysis'
+    res.json({ generated_at: new Date().toISOString(), status, types: latest })
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) })
   }
